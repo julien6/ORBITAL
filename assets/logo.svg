@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 256 256"
+   role="img"
+   aria-label="ORBITAL logo (realistic rings, opaque accent)"
+   version="1.1"
+   id="svg34"
+   sodipodi:docname="download.svg"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview36"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="3.296875"
+     inkscape:cx="127.84834"
+     inkscape:cy="55.35545"
+     inkscape:window-width="1850"
+     inkscape:window-height="1016"
+     inkscape:window-x="70"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg34" />
+  <title
+     id="title2">ORBITAL</title>
+  <defs
+     id="defs12">
+    <style
+       id="style4">
+      .shield{
+        fill:none;stroke:#0F172A;stroke-width:12;stroke-linecap:round;stroke-linejoin:round
+      }
+      .orbit{
+        fill:none;stroke:#2563EB;stroke-width:6;stroke-linecap:round;stroke-linejoin:round
+      }
+      .orbit-accent{
+        fill:none;stroke:#38BDF8;stroke-width:6;stroke-linecap:round;stroke-linejoin:round
+      }
+      .planet-fill{fill:#0F172A}
+      .planet-stroke{
+        fill:none;stroke:#0F172A;stroke-width:12;stroke-linecap:round;stroke-linejoin:round
+      }
+    </style>
+    <clipPath
+       id="frontHalf">
+      <rect
+         x="0"
+         y="120"
+         width="256"
+         height="136"
+         id="rect6" />
+    </clipPath>
+    <clipPath
+       id="backHalf">
+      <rect
+         x="0"
+         y="0"
+         width="256"
+         height="120"
+         id="rect9" />
+    </clipPath>
+  </defs>
+  <!-- Shield -->
+  <path
+     class="shield"
+     d="M128 24 L220 60 V130            C220 185 178 220 128 232            C78 220 36 185 36 130            V60 Z"
+     id="path14" />
+  <!-- Rings BACK -->
+  <ellipse
+     class="orbit"
+     cx="128"
+     cy="120"
+     rx="78"
+     ry="28"
+     transform="rotate(-18 128 120)"
+     id="ellipse16" />
+  <ellipse
+     class="orbit-accent"
+     cx="128"
+     cy="120"
+     rx="64"
+     ry="22"
+     transform="rotate(18 128 120)"
+     id="ellipse18" />
+  <!-- Planet -->
+  <circle
+     class="planet-fill"
+     cx="128"
+     cy="120"
+     r="42"
+     id="circle20" />
+  <!-- Rings FRONT -->
+  <g
+     clip-path="url(#frontHalf)"
+     id="g28">
+    <ellipse
+       class="orbit"
+       cx="128"
+       cy="120"
+       rx="78"
+       ry="28"
+       transform="rotate(-18 128 120)"
+       id="ellipse24" />
+    <ellipse
+       class="orbit-accent"
+       cx="128"
+       cy="120"
+       rx="64"
+       ry="22"
+       transform="rotate(18 128 120)"
+       id="ellipse26" />
+  </g>
+  <!-- Planet back stroke only -->
+</svg>
