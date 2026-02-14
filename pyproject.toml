@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orbital"
+version = "0.1.0"
+description = "ORBITAL PettingZoo multi-agent benchmark"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "ORBITAL Contributors"}]
+dependencies = [
+  "numpy>=1.24",
+  "gymnasium>=0.29",
+  "pettingzoo>=1.24",
+  "networkx>=3.0"
+]
+
+[project.optional-dependencies]
+render = ["pygame>=2.5"]
+dev = ["pytest>=7.0", "pettingzoo[test]>=1.24", "pygame>=2.5"]
+
+[tool.setuptools]
+packages = ["orbital", "orbital.envs", "orbital.envs.core", "orbital.envs.rendering"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
