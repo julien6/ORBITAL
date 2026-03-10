@@ -8,10 +8,16 @@ from pettingzoo import ParallelEnv
 from orbital.envs.core.config import OrbitalConfig
 from orbital.envs.core.dynamics import OrbitalCore
 from orbital.envs.core.spaces import build_action_space, build_observation_space
-from orbital.envs.rendering.pygame_renderer import PygameRenderer
+from orbital.envs.rendering.factory import create_renderer
 
 
 class OrbitalParallelEnv(ParallelEnv):
+    """PettingZoo Parallel API wrapper around the ORBITAL core.
+
+    Parallel mode is convenient for most MARL training loops where actions for
+    all alive agents are produced at each environment step.
+    """
+
     metadata = {"name": "orbital_parallel_v0", "render_modes": ["human", "rgb_array"], "is_parallelizable": True}
 
     def __init__(self, **kwargs: Any):
@@ -22,7 +28,7 @@ class OrbitalParallelEnv(ParallelEnv):
         self._observation_space = build_observation_space()
         self.core = OrbitalCore(self.config)
         self.render_mode = self.config.render_mode
-        self.renderer = PygameRenderer() if self.render_mode is not None else None
+        self.renderer = create_renderer(self.config.render_projection) if self.render_mode is not None else None
         self.np_random = None
 
     def observation_space(self, agent):
@@ -59,4 +65,5 @@ class OrbitalParallelEnv(ParallelEnv):
 
 
 def parallel_env(**kwargs: Any) -> OrbitalParallelEnv:
+    """Factory function matching PettingZoo's expected naming convention."""
     return OrbitalParallelEnv(**kwargs)

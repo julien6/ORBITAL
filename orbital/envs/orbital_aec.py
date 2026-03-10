@@ -8,10 +8,17 @@ from pettingzoo.utils import agent_selector, wrappers
 from orbital.envs.core.config import OrbitalConfig
 from orbital.envs.core.dynamics import OrbitalCore
 from orbital.envs.core.spaces import build_action_space, build_observation_space
-from orbital.envs.rendering.pygame_renderer import PygameRenderer
+from orbital.envs.rendering.factory import create_renderer
 
 
 class OrbitalAECEnv(AECEnv):
+    """PettingZoo AEC API wrapper around the ORBITAL core.
+
+    AEC mode is useful for tooling that expects agent-by-agent interaction.
+    The underlying transition remains synchronized: one environment step is
+    applied after collecting one action from each active agent.
+    """
+
     metadata = {"name": "orbital_aec_v0", "render_modes": ["human", "rgb_array"], "is_parallelizable": True}
 
     def __init__(self, **kwargs: Any):
@@ -23,7 +30,7 @@ class OrbitalAECEnv(AECEnv):
         self._action_space = build_action_space()
         self._observation_space = build_observation_space()
         self.render_mode = self.config.render_mode
-        self.renderer = PygameRenderer() if self.render_mode is not None else None
+        self.renderer = create_renderer(self.config.render_projection) if self.render_mode is not None else None
         self.core = OrbitalCore(self.config)
 
     def observation_space(self, agent):
@@ -79,6 +86,7 @@ class OrbitalAECEnv(AECEnv):
 
 
 def env(**kwargs: Any):
+    """Return the wrapped AEC environment with standard PettingZoo wrappers."""
     environment = OrbitalAECEnv(**kwargs)
     environment = wrappers.CaptureStdoutWrapper(environment)
     environment = wrappers.AssertOutOfBoundsWrapper(environment)
