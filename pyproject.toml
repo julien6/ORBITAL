@@ -15,19 +15,29 @@ dependencies = [
   "gymnasium>=0.29",
   "pettingzoo>=1.24",
   "networkx>=3.0",
-  "torch>=2.0"
+  "torch>=2.0",
+  "tyro>=0.9",
+  "tensorboard>=2.12",
+  "pygame>=2.5",
+  "pyvista>=0.43",
+  "vtk>=9.2",
+  "optuna>=3.0",
+  "imageio>=2.31",
+  "pyyaml>=6.0",
+  "matplotlib>=3.7",
+  "wandb>=0.21",
+  "pettingzoo[butterfly]>=1.24",
+  "pytest>=7.0",
+  "pettingzoo[test]>=1.24",
+  "pygame>=2.5",
+  "imageio>=2.31"
 ]
 
-[project.optional-dependencies]
-render = ["pygame>=2.5"]
-render3d = ["pyvista>=0.43", "vtk>=9.2"]
-train = ["optuna>=3.0", "imageio>=2.31", "pyyaml>=6.0", "matplotlib>=3.7", "pettingzoo[butterfly]>=1.24"]
-dev = ["pytest>=7.0", "pettingzoo[test]>=1.24", "pygame>=2.5", "imageio>=2.31"]
 
 [project.scripts]
-marl-train = "marl_lib.cli:train_main"
-marl-eval = "marl_lib.cli:eval_main"
-marl-tune = "marl_lib.cli:tune_main"
+cleanmarl-orbital-train = "cleanmarl.orbital_cli:train_main"
+cleanmarl-orbital-eval = "cleanmarl.orbital_cli:eval_main"
+cleanmarl-orbital-tune = "cleanmarl.orbital_cli:tune_main"
 mma-export-org = "mma.cli:export_org_main"
 
 [tool.setuptools]
@@ -37,10 +47,13 @@ packages = [
   "orbital.envs.core",
   "orbital.envs.rendering",
   "baselines",
+  "cleanmarl",
   "mma",
-  "mma.presets",
-  "marl_lib"
+  "mma.presets"
 ]
+
+[tool.setuptools.package-data]
+cleanmarl = ["cleanmarl/*.py", "cleanmarl/env/*.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

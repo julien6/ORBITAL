@@ -1,0 +1,24 @@
+env_factory: pettingzoo.butterfly.pistonball_v6.parallel_env
+env_kwargs:
+  continuous: false
+  max_cycles: 125
+  render_mode: null
+organization_path: configs/orgs/pistonball_empty.json
+run_dir: runs/baselines/unconstrained_cleanmarl_mappo_mma_pistonball
+seed: 31
+batch_size: 2
+actor_hidden_dim: 32
+critic_hidden_dim: 64
+learning_rate_actor: 0.0008
+learning_rate_critic: 0.0008
+total_timesteps: 100000
+gamma: 0.99
+td_lambda: 0.95
+epochs: 3
+ppo_clip: 0.2
+entropy_coef: 0.001
+eval_steps: 2
+num_eval_ep: 4
+device: cpu
+image_downsample: 8
+image_grayscale: true

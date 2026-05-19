@@ -1,0 +1,16 @@
+numpy>=1.24
+gymnasium>=0.29
+pettingzoo>=1.24
+networkx>=3.0
+torch>=2.0
+tyro>=0.9
+tensorboard>=2.12
+
+# Optional training/evaluation helpers used by CleanMARL ORBITAL wrappers.
+optuna>=3.0
+imageio>=2.31
+pyyaml>=6.0
+matplotlib>=3.7
+
+# Optional environments.
+pettingzoo[butterfly]>=1.24

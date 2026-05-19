@@ -1,0 +1,23 @@
+env_factory: orbital.envs.orbital_parallel.parallel_env
+env_kwargs:
+  num_satellites: 6
+  max_steps: 96
+  render_mode: null
+  render_projection: "2d"
+organization_path: configs/orgs/empty.json
+run_dir: runs/baselines/unconstrained_cleanmarl_mappo_mma
+seed: 23
+batch_size: 3
+actor_hidden_dim: 32
+critic_hidden_dim: 64
+learning_rate_actor: 0.0008
+learning_rate_critic: 0.0008
+total_timesteps: 20000
+gamma: 0.99
+td_lambda: 0.95
+epochs: 3
+ppo_clip: 0.2
+entropy_coef: 0.001
+eval_steps: 2
+num_eval_ep: 4
+device: cpu

@@ -10,32 +10,26 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from marl_lib.checkpoint import PolicyCheckpoint
-from marl_lib.config import MAPPOConfig
-from marl_lib.eval import EvalRunner
-from marl_lib.envs import make_env
-from marl_lib.networks import MLPActorCritic
-from marl_lib.trainer import MAPPOTrainer
+from cleanmarl.orbital_runner import CleanMAPPOConfig, evaluate_policy, load_checkpoint, train_mappo
 from mma import Organization
 
 
 def build_empty_organization() -> Organization:
-    """No roles, no goals: classic unconstrained MARL through MMAWrapper."""
     return Organization(
         name="unconstrained_empty",
         roles={},
         goals={},
         assignments={},
         metadata={
-            "baseline": "unconstrained_mappo_mma",
-            "description": "MMA organization intentionally left empty: no roles, no goals, no action correction beyond identity.",
+            "baseline": "unconstrained_cleanmarl_mappo_mma",
+            "description": "Empty MMA organization: no roles, no goals. CleanMARL MAPPO is unconstrained.",
         },
     )
 
 
-def build_config(args: argparse.Namespace, org_path: Path) -> MAPPOConfig:
-    return MAPPOConfig(
-        env_id="orbital.envs.orbital_parallel.parallel_env",
+def build_config(args: argparse.Namespace, org_path: Path) -> CleanMAPPOConfig:
+    return CleanMAPPOConfig(
+        env_factory="orbital.envs.orbital_parallel.parallel_env",
         env_kwargs={
             "num_satellites": args.satellites,
             "max_steps": args.max_steps,
@@ -46,61 +40,35 @@ def build_config(args: argparse.Namespace, org_path: Path) -> MAPPOConfig:
         organization_path=str(org_path),
         run_dir=str(args.run_dir),
         seed=args.seed,
-        total_steps=args.total_steps,
-        rollout_steps=args.rollout_steps,
-        update_epochs=args.update_epochs,
-        minibatch_size=args.minibatch_size,
+        batch_size=args.batch_size,
+        actor_hidden_dim=args.actor_hidden_dim,
+        critic_hidden_dim=args.critic_hidden_dim,
+        learning_rate_actor=args.learning_rate_actor,
+        learning_rate_critic=args.learning_rate_critic,
+        total_timesteps=args.total_timesteps,
         gamma=args.gamma,
-        gae_lambda=args.gae_lambda,
-        clip_coef=args.clip_coef,
+        td_lambda=args.td_lambda,
+        epochs=args.epochs,
+        ppo_clip=args.ppo_clip,
         entropy_coef=args.entropy_coef,
-        value_coef=args.value_coef,
-        max_grad_norm=args.max_grad_norm,
-        learning_rate=args.learning_rate,
-        hidden_size=args.hidden_size,
-        checkpoint_interval=args.checkpoint_interval,
-        eval_interval=args.eval_interval,
-        eval_episodes=args.eval_episodes,
+        eval_steps=args.eval_steps,
+        num_eval_ep=args.eval_episodes,
         device=args.device,
     )
 
 
-def load_model_from_checkpoint(checkpoint_path: Path) -> tuple[MAPPOConfig, MLPActorCritic, list[str]]:
-    payload = PolicyCheckpoint.load(checkpoint_path)
-    cfg = MAPPOConfig.from_dict(payload["config"])
-    sample_env = make_env(cfg.env_id, cfg.env_kwargs, cfg.organization_path, mma_mode="eval", seed=cfg.seed)
-    try:
-        obs, _ = sample_env.reset(seed=cfg.seed)
-        agent_order = list(payload.get("agent_order", sample_env.possible_agents))
-        sample_agent = agent_order[0]
-        obs_dim = len(obs[sample_agent])
-        action_dim = sample_env.action_space(sample_agent).n
-    finally:
-        sample_env.close()
-    model = MLPActorCritic(obs_dim, obs_dim * len(agent_order), action_dim, cfg.hidden_size)
-    model.load_state_dict(payload["model"])
-    model.eval()
-    return cfg, model, agent_order
-
-
 def run_baseline(args: argparse.Namespace) -> dict[str, Any]:
     run_dir = Path(args.run_dir)
+    run_dir.mkdir(parents=True, exist_ok=True)
     org_path = run_dir / "organization_empty.json"
     stats_path = run_dir / "eval_stats.json"
     gif_path = run_dir / "eval_mosaic.gif"
-    run_dir.mkdir(parents=True, exist_ok=True)
     build_empty_organization().to_json(org_path)
-
     cfg = build_config(args, org_path)
     checkpoint_path = Path(args.checkpoint) if args.checkpoint else run_dir / "best.pt"
+
     if not args.eval_only:
-        trainer = MAPPOTrainer(cfg)
-        try:
-            if args.resume and (run_dir / "last.pt").exists():
-                trainer.load_checkpoint(run_dir / "last.pt")
-            train_metrics = trainer.train()
-        finally:
-            trainer.close()
+        train_metrics = train_mappo(cfg)
         if not checkpoint_path.exists():
             checkpoint_path = run_dir / "last.pt"
     else:
@@ -108,15 +76,10 @@ def run_baseline(args: argparse.Namespace) -> dict[str, Any]:
         if not checkpoint_path.exists():
             raise FileNotFoundError(f"No checkpoint found at {checkpoint_path}")
 
-    eval_cfg, model, agent_order = load_model_from_checkpoint(checkpoint_path)
-    eval_cfg.eval_episodes = args.eval_episodes
-    metrics = EvalRunner(eval_cfg, model, agent_order).run(
-        episodes=args.eval_episodes,
-        gif_path=str(gif_path),
-        deterministic=not args.stochastic_eval,
-    )
+    eval_cfg, actor, _critic, _payload = load_checkpoint(checkpoint_path, device=args.device)
+    metrics = evaluate_policy(eval_cfg, actor, episodes=args.eval_episodes, gif_path=str(gif_path))
     payload = {
-        "baseline": "unconstrained_mappo_mma",
+        "baseline": "unconstrained_cleanmarl_mappo_mma",
         "organization": str(org_path),
         "checkpoint": str(checkpoint_path),
         "gif": str(gif_path),
@@ -129,33 +92,27 @@ def run_baseline(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Unconstrained MAPPO baseline for ORBITAL using an empty MMA organization."
-    )
-    parser.add_argument("--run-dir", type=Path, default=Path("runs/baselines/unconstrained_mappo_mma"))
-    parser.add_argument("--checkpoint", default=None)
+    parser = argparse.ArgumentParser(description="Unconstrained CleanMARL MAPPO baseline for ORBITAL.")
+    parser.add_argument("--run-dir", type=Path, default=Path("runs/baselines/unconstrained_cleanmarl_mappo_mma"))
+    parser.add_argument("--checkpoint")
     parser.add_argument("--eval-only", action="store_true")
-    parser.add_argument("--resume", action="store_true")
     parser.add_argument("--seed", type=int, default=23)
     parser.add_argument("--satellites", type=int, default=6)
     parser.add_argument("--max-steps", type=int, default=96)
-    parser.add_argument("--total-steps", type=int, default=20000)
-    parser.add_argument("--rollout-steps", type=int, default=256)
-    parser.add_argument("--update-epochs", type=int, default=4)
-    parser.add_argument("--minibatch-size", type=int, default=256)
-    parser.add_argument("--learning-rate", type=float, default=3e-4)
-    parser.add_argument("--hidden-size", type=int, default=128)
+    parser.add_argument("--total-timesteps", type=int, default=20000)
+    parser.add_argument("--batch-size", type=int, default=3)
+    parser.add_argument("--actor-hidden-dim", type=int, default=32)
+    parser.add_argument("--critic-hidden-dim", type=int, default=64)
+    parser.add_argument("--learning-rate-actor", type=float, default=8e-4)
+    parser.add_argument("--learning-rate-critic", type=float, default=8e-4)
     parser.add_argument("--gamma", type=float, default=0.99)
-    parser.add_argument("--gae-lambda", type=float, default=0.95)
-    parser.add_argument("--clip-coef", type=float, default=0.2)
-    parser.add_argument("--entropy-coef", type=float, default=0.01)
-    parser.add_argument("--value-coef", type=float, default=0.5)
-    parser.add_argument("--max-grad-norm", type=float, default=0.5)
-    parser.add_argument("--checkpoint-interval", type=int, default=5000)
-    parser.add_argument("--eval-interval", type=int, default=5000)
+    parser.add_argument("--td-lambda", type=float, default=0.95)
+    parser.add_argument("--epochs", type=int, default=3)
+    parser.add_argument("--ppo-clip", type=float, default=0.2)
+    parser.add_argument("--entropy-coef", type=float, default=0.001)
+    parser.add_argument("--eval-steps", type=int, default=2)
     parser.add_argument("--eval-episodes", type=int, default=4)
-    parser.add_argument("--device", default="auto")
-    parser.add_argument("--stochastic-eval", action="store_true")
+    parser.add_argument("--device", default="cpu")
     return parser.parse_args()
 
 

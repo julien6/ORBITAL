@@ -144,16 +144,16 @@ Full observation semantics are documented in `docs/ENV_SPECS.md` .
 
 ORBITAL includes two internal training packages:
 
-* `marl_lib`: MAPPO with decentralized actors, centralized critic, checkpoints, resume, evaluation, GIF export, and optional Optuna tuning.
+* `cleanmarl`: local CleanMARL integration used as the official MARL implementation, including MAPPO, TensorBoard logging, checkpoints, evaluation, GIF export, and optional Optuna tuning.
 * `mma`: MOISE+MARL organization wrapper. Roles correct invalid actions after the policy samples freely; goals shape rewards during training only.
 
 Starter commands:
 
 ```bash
 mma-export-org --preset orbital_basic --out configs/orgs/orbital_basic.json
-marl-train --config configs/orbital_mappo.yaml
-marl-eval --checkpoint runs/orbital_mappo/best.pt --episodes 20 --gif runs/orbital_mappo/eval.gif
-marl-tune --config configs/orbital_mappo.yaml --trials 50
+cleanmarl-orbital-train --organization-path configs/orgs/empty.json
+cleanmarl-orbital-eval --checkpoint runs/cleanmarl_orbital/best.pt --episodes 20 --gif runs/cleanmarl_orbital/eval.gif
+cleanmarl-orbital-tune --organization-path configs/orgs/empty.json --trials 50
 ```
 
 ## Reward Design

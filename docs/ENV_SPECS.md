@@ -124,14 +124,14 @@ The default reward is intentionally non-myopic: it rewards mission output but pe
 The repo includes two internal libraries:
 
 - `mma` wraps PettingZoo Parallel environments with MOISE+MARL organizations. Roles correct invalid actions after policy sampling; goals shape rewards only in training mode.
-- `marl_lib` provides a compact MAPPO implementation with centralized critic, decentralized actor, checkpoints, resume, evaluation, and optional Optuna tuning.
+- `cleanmarl` is integrated as the local MARL library and provides MAPPO with centralized critic, decentralized actor, TensorBoard logging, checkpoints, evaluation, and optional Optuna tuning.
 
 Useful commands:
 
 - `mma-export-org --preset orbital_basic --out configs/orgs/orbital_basic.json`
-- `marl-train --config configs/orbital_mappo.yaml`
-- `marl-eval --checkpoint runs/orbital_mappo/best.pt --episodes 20 --gif runs/orbital_mappo/eval.gif`
-- `marl-tune --config configs/orbital_mappo.yaml --trials 50`
+- `cleanmarl-orbital-train --organization-path configs/orgs/empty.json`
+- `cleanmarl-orbital-eval --checkpoint runs/cleanmarl_orbital/best.pt --episodes 20 --gif runs/cleanmarl_orbital/eval.gif`
+- `cleanmarl-orbital-tune --organization-path configs/orgs/empty.json --trials 50`
 
 ## Orbital/ground notes
 
