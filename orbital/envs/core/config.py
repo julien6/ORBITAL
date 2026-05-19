@@ -7,17 +7,25 @@ import math
 DEFAULT_REWARD_WEIGHTS = {
     "task": 1.0,
     "delivery": 1.5,
+    "knowledge": 0.2,
     "energy": 0.05,
+    "overflow": 0.4,
+    "data_loss": 0.8,
+    "health": 0.8,
     "isolation": 0.3,
     "failure": 1.0,
     "cyber": 0.4,
+    "jam": 0.5,
+    "forced_action": 0.7,
+    "atmospheric_drag": 0.5,
     "debris_risk": 0.35,
     "collision": 2.5,
 }
 
 DEFAULT_ENERGY_COSTS = {
     "observe": 1.5,
-    "relay": 1.0,
+    "relay_ground": 1.1,
+    "relay_sat": 0.9,
     "orbit_down": 1.0,
     "orbit_up": 1.3,
     "lowpower": 0.2,
@@ -40,15 +48,29 @@ class OrbitalConfig:
     num_tasks: int = 8
     task_spawn_rate: float = 0.15
     task_priority_mode: str = "dynamic"
+    task_knowledge_mode: str = "ground_catalog"
+    enable_local_task_discovery: bool = False
     energy_budget: float = 40.0
-    energy_costs: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_ENERGY_COSTS))
+    health_budget: float = 100.0
+    energy_costs: dict[str, float] = field(
+        default_factory=lambda: dict(DEFAULT_ENERGY_COSTS))
     enable_recharge: bool = True
     recharge_rate: float = 0.4
+    data_capacity: float = 5.0
+    obs_data_gain: float = 1.0
+    relay_capacity_ground: float = 1.2
+    relay_capacity_sat: float = 0.8
     comm_radius: int = 3
     p_link_drop: float = 0.05
     adversarial_rate: float = 0.05
     compromise_duration: int = 8
     spoof_mode: str = "obs_spoof"
+    malware_energy_drain: float = 0.35
+    malware_health_drain: float = 0.18
+    malware_jam_prob: float = 0.30
+    malware_forced_action_prob: float = 0.16
+    scan_clean_prob: float = 0.35
+    scan_duration_reduction: int = 3
     enable_debris: bool = True
     num_debris_clouds: int = 4
     debris_spawn_rate: float = 0.10
@@ -59,15 +81,23 @@ class OrbitalConfig:
     debris_risk_gain: float = 0.85
     pc_alert_threshold: float = 0.35
     pc_collision_scale: float = 0.08
+    debris_health_loss_min: float = 4.0
+    debris_health_loss_max: float = 18.0
     debris_mitigation_factor: float = 0.45
-    reward_weights: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_REWARD_WEIGHTS))
+    reward_weights: dict[str, float] = field(
+        default_factory=lambda: dict(DEFAULT_REWARD_WEIGHTS))
     reward_mode: str = "shared"
     max_steps: int = 256
     sunlight_period: int = 20
     orbit_min_radius: float = 2.0
     orbit_max_radius: float = 8.0
-    kepler_constant: float = 1.0
+    kepler_constant: float = 0.35
     orbit_shift_step: float = 0.45
+    low_orbit_margin: float = 0.35
+    high_orbit_margin: float = 0.50
+    atmospheric_health_loss: float = 0.8
+    atmospheric_slowdown: float = 0.82
+    high_orbit_comm_cost_scale: float = 0.45
     earth_radius: float = 1.0
     ground_theta: float = -math.pi / 2.0
     ground_station_thetas: tuple[float, ...] = ()
@@ -89,12 +119,35 @@ class OrbitalConfig:
             raise ValueError("num_tasks must be >= 1")
         if not 0.0 <= self.task_spawn_rate <= 1.0:
             raise ValueError("task_spawn_rate must be in [0,1]")
+        if self.task_knowledge_mode not in {"ground_catalog", "local_discovery"}:
+            raise ValueError(
+                "task_knowledge_mode must be ground_catalog or local_discovery")
         if not 0.0 <= self.p_link_drop <= 1.0:
             raise ValueError("p_link_drop must be in [0,1]")
         if not 0.0 <= self.adversarial_rate <= 1.0:
             raise ValueError("adversarial_rate must be in [0,1]")
+        if self.energy_budget <= 0.0:
+            raise ValueError("energy_budget must be > 0")
+        if self.health_budget <= 0.0:
+            raise ValueError("health_budget must be > 0")
+        if self.data_capacity <= 0.0:
+            raise ValueError("data_capacity must be > 0")
+        if self.obs_data_gain <= 0.0:
+            raise ValueError("obs_data_gain must be > 0")
+        if self.relay_capacity_ground <= 0.0:
+            raise ValueError("relay_capacity_ground must be > 0")
+        if self.relay_capacity_sat <= 0.0:
+            raise ValueError("relay_capacity_sat must be > 0")
         if self.compromise_duration < 1:
             raise ValueError("compromise_duration must be >=1")
+        if not 0.0 <= self.malware_jam_prob <= 1.0:
+            raise ValueError("malware_jam_prob must be in [0,1]")
+        if not 0.0 <= self.malware_forced_action_prob <= 1.0:
+            raise ValueError("malware_forced_action_prob must be in [0,1]")
+        if not 0.0 <= self.scan_clean_prob <= 1.0:
+            raise ValueError("scan_clean_prob must be in [0,1]")
+        if self.scan_duration_reduction < 1:
+            raise ValueError("scan_duration_reduction must be >= 1")
         if self.num_debris_clouds < 0:
             raise ValueError("num_debris_clouds must be >= 0")
         if not 0.0 <= self.debris_spawn_rate <= 1.0:
@@ -113,6 +166,11 @@ class OrbitalConfig:
             raise ValueError("pc_alert_threshold must be in [0,1]")
         if not 0.0 <= self.pc_collision_scale <= 1.0:
             raise ValueError("pc_collision_scale must be in [0,1]")
+        if self.debris_health_loss_min < 0.0:
+            raise ValueError("debris_health_loss_min must be >= 0")
+        if self.debris_health_loss_max < self.debris_health_loss_min:
+            raise ValueError(
+                "debris_health_loss_max must be >= debris_health_loss_min")
         if not 0.0 <= self.debris_mitigation_factor <= 1.0:
             raise ValueError("debris_mitigation_factor must be in [0,1]")
         if self.reward_mode not in {"shared", "local"}:
@@ -138,12 +196,17 @@ class OrbitalConfig:
         if self.render_projection not in {"2d", "3d"}:
             raise ValueError("render_projection must be '2d' or '3d'")
         if self.render_quality not in {"ultra_low", "low", "medium", "high"}:
-            raise ValueError("render_quality must be 'ultra_low', 'low', 'medium', or 'high'")
+            raise ValueError(
+                "render_quality must be 'ultra_low', 'low', 'medium', or 'high'")
         if len(self.ground_station_thetas) == 0:
-            self.ground_station_thetas = (self.ground_theta, self.ground_theta + math.pi)
+            self.ground_station_thetas = (
+                self.ground_theta, self.ground_theta + math.pi)
         if len(self.ground_station_thetas) < 1:
-            raise ValueError("ground_station_thetas must contain at least one station angle")
+            raise ValueError(
+                "ground_station_thetas must contain at least one station angle")
         if len(self.ground_station_phis) == 0:
-            self.ground_station_phis = tuple(0.0 for _ in self.ground_station_thetas)
+            self.ground_station_phis = tuple(
+                0.0 for _ in self.ground_station_thetas)
         if len(self.ground_station_phis) != len(self.ground_station_thetas):
-            raise ValueError("ground_station_phis must match ground_station_thetas length")
+            raise ValueError(
+                "ground_station_phis must match ground_station_thetas length")

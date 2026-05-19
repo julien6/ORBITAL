@@ -8,7 +8,7 @@ ORBITAL (*Orbital Resilient Benchmark for Interactive Task-aware Autonomous Lear
 
 It is designed as a neutral benchmark: the environment does not impose a coordination method. You can plug in value-based MARL, policy gradient, planning, centralized training, decentralized execution, or custom protocols.
 
-The collective objective is simple to state and hard to optimize: maximize useful data delivered to ground while keeping the fleet alive, connected, and resilient.
+The collective goal is simple to state and hard to optimize: maximize useful data delivered to ground while keeping the fleet alive, connected, and resilient.
 
 ## Why ORBITAL
 
@@ -30,10 +30,10 @@ Default mode is 2D ( `theta` , radius), with an optional 3D mode ( `theta` , rad
 
 At each step:
 
-1. satellites choose actions (`Observe`, `Relay`, `OrbitDown`, `OrbitUp`, `LowPower`, `CyberScan`, `Idle`)
+1. satellites choose actions (`OBS`, `REL_GRN`, `REL_SAT`, `DN`, `UP`, `PWR`, `SCAN`, `IDLE`)
 2. energy is consumed based on action costs
 3. tasks may be serviced and turned into buffered data
-4. buffered data can be delivered when relay conditions are met
+4. buffered data can be delivered to ground or routed by satellite relay when conditions are met
 5. communication links are recomputed from distance + random link drops
 6. adversarial events may compromise satellites
 7. debris clouds evolve and induce local collision-risk pressure
@@ -45,8 +45,8 @@ Episodes end by horizon ( `max_steps` ) or mission collapse (for example too few
 
 Think of ORBITAL as a repeated loop with two distinct phases:
 
-1. `Observe` turns local opportunities into buffered data on a satellite.
-2. `Relay` converts buffered data into mission value only when communication paths to a ground station exist.
+1. `OBS` turns known local opportunities into buffered data on a satellite.
+2. `REL_GRN` and `REL_SAT` convert buffered data into mission value directly or through proxy routing toward ground.
 
 This deliberate split is where most difficulty comes from: a fleet can look productive locally while still failing globally if data never reaches ground.
 
@@ -122,22 +122,39 @@ This models risk-aware autonomy (screening + mitigation) rather than static obst
 
 ORBITAL intentionally uses **fixed-size vector observations only** for MARL compatibility and reproducibility.
 
-* Observation: `Box(shape=(16,), dtype=np.float32)`
-* Action: `Discrete(7)`
+* Observation: `Box(shape=(20,), dtype=np.float32)`
+* Action: `Discrete(8)`
 
 Action IDs:
 
 | ID | Action |
 |---:|---|
-| 0 | Observe |
-| 1 | Relay |
-| 2 | OrbitDown |
-| 3 | OrbitUp |
-| 4 | LowPower |
-| 5 | CyberScan |
-| 6 | Idle |
+| 0 | OBS |
+| 1 | REL_GRN |
+| 2 | REL_SAT |
+| 3 | DN |
+| 4 | UP |
+| 5 | PWR |
+| 6 | SCAN |
+| 7 | IDLE |
 
 Full observation semantics are documented in `docs/ENV_SPECS.md` .
+
+## MAPPO and MOISE+MARL
+
+ORBITAL includes two internal training packages:
+
+* `marl_lib`: MAPPO with decentralized actors, centralized critic, checkpoints, resume, evaluation, GIF export, and optional Optuna tuning.
+* `mma`: MOISE+MARL organization wrapper. Roles correct invalid actions after the policy samples freely; goals shape rewards during training only.
+
+Starter commands:
+
+```bash
+mma-export-org --preset orbital_basic --out configs/orgs/orbital_basic.json
+marl-train --config configs/orbital_mappo.yaml
+marl-eval --checkpoint runs/orbital_mappo/best.pt --episodes 20 --gif runs/orbital_mappo/eval.gif
+marl-tune --config configs/orbital_mappo.yaml --trials 50
+```
 
 ## Reward Design
 

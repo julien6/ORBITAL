@@ -1,0 +1,30 @@
+env_id: orbital.envs.orbital_parallel.parallel_env
+env_kwargs:
+  num_satellites: 6
+  max_steps: 64
+  render_mode: null
+  render_projection: "2d"
+organization_path: configs/orgs/empty.json
+run_dir: runs/orbital_mappo_empty_mma
+seed: 11
+total_steps: 1536
+rollout_steps: 128
+update_epochs: 3
+minibatch_size: 128
+gamma: 0.99
+gae_lambda: 0.95
+clip_coef: 0.2
+entropy_coef: 0.01
+value_coef: 0.5
+max_grad_norm: 0.5
+learning_rate: 0.0003
+hidden_size: 128
+checkpoint_interval: 768
+eval_interval: 768
+eval_episodes: 4
+eval_on_update: true
+target_reward: null
+patience_evals: null
+device: auto
+image_downsample: 1
+image_grayscale: false

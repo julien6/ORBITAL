@@ -347,7 +347,8 @@ class PyVistaRenderer:
         blk_k = 0
 
         for i in range(n_agents):
-            if core.energy[i] <= 0 or core.buffered_data[i] <= 0.0:
+            health_arr = getattr(core, "health", core.energy)
+            if health_arr[i] <= 0 or core.buffered_data[i] <= 0.0:
                 continue
             sat = np.asarray(self._to_xyz(core.positions[i]), dtype=np.float32)
             nearest = int(np.argmin(np.linalg.norm(ground_pts - sat[None, :], axis=1)))
@@ -408,14 +409,20 @@ class PyVistaRenderer:
         isolated_idx = 0
         contact_idx = 0
         for i in range(n_agents):
+            health_arr = getattr(core, "health", core.energy)
+            alive = health_arr[i] > 0
+            if not alive:
+                sat_pts[i] = far
+                sat_cols[i] = np.array((0, 0, 0), dtype=np.uint8)
+                continue
             sat_pts[i] = np.asarray(self._to_xyz(core.positions[i]), dtype=np.float32)
-            alive = core.energy[i] > 0
             compromised = core.compromised_for[i] > 0
             energy_ratio = core.energy[i] / max(core.config.energy_budget, 1e-6)
+            health_ratio = health_arr[i] / max(getattr(core.config, "health_budget", core.config.energy_budget), 1e-6)
             color = (90, 180, 255) if alive else (70, 70, 70)
             if alive and (core.buffered_data[i] > 1.0 or has_ground_path[i]):
                 color = (115, 214, 255)
-            if alive and (compromised or energy_ratio < 0.25):
+            if alive and (compromised or energy_ratio < 0.25 or health_ratio < 0.35):
                 color = (144, 226, 175)
             sat_cols[i] = np.array(color, dtype=np.uint8)
             if compromised and alert_idx < alert_pts.shape[0]:
@@ -439,6 +446,8 @@ class PyVistaRenderer:
         for ti, t in enumerate(core.tasks):
             if not t.active:
                 continue
+            if hasattr(core, "task_is_known") and not core.task_is_known(ti):
+                continue
             task_pts[ti] = np.asarray(
                 self._to_xyz(core._cartesian_from_orbit(t.theta, t.radius, t.phi)),
                 dtype=np.float32,
@@ -457,7 +466,7 @@ class PyVistaRenderer:
                 dtype=np.float32,
             )
             v = float(np.clip(d.density, 0.0, 1.0))
-            debris_cols[di] = np.array((255, int(120 + 45 * v), int(70 + 20 * v)), dtype=np.uint8)
+            debris_cols[di] = np.array((154, int(82 + 40 * v), 214), dtype=np.uint8)
         self._debris_poly.points[:] = debris_pts
         self._debris_poly["rgb"][:] = debris_cols
 
@@ -465,15 +474,20 @@ class PyVistaRenderer:
         self._update_downlink_buffers(core, has_ground_path=has_ground_path)
 
     def _update_hud(self, plotter: Any, core) -> None:
-        alive = int((core.energy > 0).sum())
-        active_tasks = sum(1 for t in core.tasks if t.active)
+        health_arr = getattr(core, "health", core.energy)
+        alive = int((health_arr > 0).sum())
+        active_tasks = sum(
+            1
+            for idx, t in enumerate(core.tasks)
+            if t.active and (not hasattr(core, "task_is_known") or core.task_is_known(idx))
+        )
         active_debris = sum(1 for d in getattr(core, "debris_clouds", []) if d.density > 1e-4)
         rc = core.last_reward_components
         hud = (
             f"ORBITAL 3D VIEW | t={core.t}/{core.config.max_steps}\n"
-            f"alive={alive}/{core.num_agents} | tasks={active_tasks} | debris={active_debris}\n"
-            f"delivered={core.delivered_total:.1f} | task={rc.get('task', 0.0):.2f} | delivery={rc.get('delivery', 0.0):.2f}\n"
-            f"energy=-{rc.get('energy', 0.0):.2f} | isolation=-{rc.get('isolation', 0.0):.2f} | cyber=-{rc.get('cyber', 0.0):.2f}\n"
+            f"alive={alive}/{core.num_agents} | known_tasks={active_tasks} | debris={active_debris}\n"
+            f"delivered={core.delivered_total:.1f} | task={rc.get('task', 0.0):.2f} | delivery={rc.get('delivery', 0.0):.2f} | knowledge={rc.get('knowledge', 0.0):.2f}\n"
+            f"energy=-{rc.get('energy', 0.0):.2f} | health=-{rc.get('health', 0.0):.2f} | cyber=-{rc.get('cyber', 0.0):.2f}\n"
             f"debris=-{rc.get('debris_risk', 0.0):.2f} | collision=-{rc.get('collision', 0.0):.2f}"
         )
         plotter.add_text(hud, position="upper_left", font_size=10, color="white", name="hud")

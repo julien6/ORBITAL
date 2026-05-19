@@ -22,7 +22,8 @@ class Orbital3DAECEnv(OrbitalAECEnv):
 
 def env(**kwargs: Any):
     environment = Orbital3DAECEnv(**kwargs)
-    environment = wrappers.CaptureStdoutWrapper(environment)
+    if environment.render_mode == "human":
+        environment = wrappers.CaptureStdoutWrapper(environment)
     environment = wrappers.AssertOutOfBoundsWrapper(environment)
     environment = wrappers.OrderEnforcingWrapper(environment)
     return environment

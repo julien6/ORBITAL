@@ -1,0 +1,26 @@
+{
+  "assignments": {
+    "sat_0": {"agent": "sat_0", "goals": ["AcquireUsefulData", "StabilizeFleet"], "roles": ["Acquirer"]},
+    "sat_1": {"agent": "sat_1", "goals": ["DeliverFast", "StabilizeFleet"], "roles": ["GroundCourier"]},
+    "sat_2": {"agent": "sat_2", "goals": ["DeliverFast", "StabilizeFleet"], "roles": ["SatRouter"]},
+    "sat_3": {"agent": "sat_3", "goals": ["AcquireUsefulData", "StabilizeFleet"], "roles": ["Acquirer"]},
+    "sat_4": {"agent": "sat_4", "goals": ["DeliverFast", "StabilizeFleet"], "roles": ["GroundCourier"]},
+    "sat_5": {"agent": "sat_5", "goals": ["DeliverFast", "StabilizeFleet"], "roles": ["SatRouter"]},
+    "sat_6": {"agent": "sat_6", "goals": ["AcquireUsefulData", "StabilizeFleet"], "roles": ["Acquirer"]},
+    "sat_7": {"agent": "sat_7", "goals": ["DeliverFast", "StabilizeFleet"], "roles": ["GroundCourier"]}
+  },
+  "metadata": {
+    "description": "Acquire--deliver--stabilize starter organization for ORBITAL V2."
+  },
+  "name": "orbital_basic",
+  "goals": {
+    "AcquireUsefulData": {"name": "AcquireUsefulData", "rules": [{"name": "orbital.acquire_useful_data", "params": {}}]},
+    "DeliverFast": {"name": "DeliverFast", "rules": [{"name": "orbital.deliver_fast", "params": {}}]},
+    "StabilizeFleet": {"name": "StabilizeFleet", "rules": [{"name": "orbital.stabilize_fleet", "params": {}}]}
+  },
+  "roles": {
+    "Acquirer": {"name": "Acquirer", "rules": [{"name": "orbital.acquirer", "params": {}}]},
+    "GroundCourier": {"name": "GroundCourier", "rules": [{"name": "orbital.ground_courier", "params": {}}]},
+    "SatRouter": {"name": "SatRouter", "rules": [{"name": "orbital.sat_router", "params": {}}]}
+  }
+}

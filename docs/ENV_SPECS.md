@@ -1,16 +1,15 @@
 # ORBITAL Environment Specs
 
-## Operational objective (intuitive)
+## Operational Goal (Intuitive)
 
-The team objective is to maximize mission value delivered to ground while preserving fleet viability.
+The team goal is to maximize mission value delivered to ground while preserving fleet viability.
 
 In practice, this means balancing four pressures at every step:
 
-1. mission productivity (service high-value tasks),
-2. delivery continuity (relay buffered data to ground),
-3. survivability (avoid energy collapse),
-4. resilience (mitigate communication/cyber degradation).
-5. conjunction safety (limit debris exposure and collision risk).
+1. acquisition (discover known orbital observation tasks and collect useful data),
+2. delivery (route buffered data to ground directly or through satellites),
+3. stabilization (preserve health, energy, connectivity, and cyber integrity),
+4. conjunction safety (limit debris exposure and collision risk).
 
 Important modeling choice: `Observe` and `Relay` are intentionally decoupled.
 Servicing a task creates buffered data, but value is only realized when data is later delivered.
@@ -18,38 +17,43 @@ This is what makes myopic policies fail in long horizons.
 
 ## Observation (fixed-size vector)
 
-Each agent receives a `np.float32` vector of size **16**:
+Each agent receives a `np.float32` vector of size **20**:
 
 1. normalized self energy `[0,1]`
-2. normalized orbital angle `theta/(2π)` in `[0,1]`
-3. normalized orbital radius in `[0,1]`
-4. cyber healthy indicator (one-hot)
-5. cyber suspicious indicator (one-hot)
-6. cyber compromised indicator (one-hot)
-7. normalized local communication degree
-8. normalized nearby active task count
-9. normalized nearby task priority sum
+2. normalized self health `[0,1]`
+3. normalized orbital angle `theta/(2π)` in `[0,1]`
+4. normalized orbital radius in `[0,1]`
+5. normalized orbital inclination `phi` in 3D, or `0` in 2D
+6. sunlight indicator
+7. direct ground contact indicator
+8. estimated route to ground indicator
+9. normalized local communication degree
 10. normalized buffered data
-11. normalized local debris density
-12. local conjunction-risk proxy (`Pc` estimate in `[0,1]`)
-13. sunlight phase `sin(2πt/T)`
-14. sunlight phase `cos(2πt/T)` in 2D mode, or normalized orbital inclination `phi` in 3D mode
-15. fraction of compromised neighbors
-16. alive satellite fraction
+11. normalized remaining buffer capacity
+12. normalized known nearby task count
+13. normalized known nearby task priority
+14. normalized local debris density
+15. local conjunction-risk proxy (`Pc` estimate in `[0,1]`)
+16. compromised indicator
+17. suspicious/scan indicator
+18. jammed indicator
+19. fraction of compromised neighbors
+20. alive satellite fraction, negated if the last action was malware-forced
 
 > `obs_mode` is intentionally not exposed: ORBITAL uses fixed-size vectors only.
 
 ## Action space
 
-`Discrete(7)`:
+`Discrete(8)`:
 
-- `0 Observe`
-- `1 Relay`
-- `2 OrbitDown` (transfer to a lower orbit)
-- `3 OrbitUp` (transfer to a higher orbit)
-- `4 LowPower`
-- `5 CyberScan`
-- `6 Idle`
+- `0 OBS`
+- `1 REL_GRN` (bidirectional satellite-ground relay)
+- `2 REL_SAT` (bidirectional satellite-satellite relay)
+- `3 DN` (transfer to a lower orbit)
+- `4 UP` (transfer to a higher orbit)
+- `5 PWR`
+- `6 SCAN`
+- `7 IDLE`
 
 ## Typical policy contrast
 
@@ -92,17 +96,42 @@ The default reward is intentionally non-myopic: it rewards mission output but pe
 `infos[agent]` includes:
 
 - `energy`
+- `health`
+- `alive`
 - `compromised`
+- `malware_awake`
+- `jammed`
+- `last_action_forced`
 - `local_degree`
 - `buffered_data`
+- `known_tasks`
 - `theta`
 - `phi`
 - `radius`
+- `sunlight`
+- `ground_contact`
+- `ground_route`
 - `local_debris_density`
 - `local_pc_estimate`
+- `last_executed_action`
+- episode counters such as `delivered_total`, `observed_total`, `knowledge_shared`, `jam_count`, and `forced_actions`
 - `time`
 - `reward_components`
 - `episode` summary on final step
+
+## MOISE+MARL and MAPPO
+
+The repo includes two internal libraries:
+
+- `mma` wraps PettingZoo Parallel environments with MOISE+MARL organizations. Roles correct invalid actions after policy sampling; goals shape rewards only in training mode.
+- `marl_lib` provides a compact MAPPO implementation with centralized critic, decentralized actor, checkpoints, resume, evaluation, and optional Optuna tuning.
+
+Useful commands:
+
+- `mma-export-org --preset orbital_basic --out configs/orgs/orbital_basic.json`
+- `marl-train --config configs/orbital_mappo.yaml`
+- `marl-eval --checkpoint runs/orbital_mappo/best.pt --episodes 20 --gif runs/orbital_mappo/eval.gif`
+- `marl-tune --config configs/orbital_mappo.yaml --trials 50`
 
 ## Orbital/ground notes
 

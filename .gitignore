@@ -1,7 +1,71 @@
+# Python bytecode and caches
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .pytest_cache/
-.venv/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Packaging and build outputs
 *.egg-info/
+build/
+dist/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
 venv/
+env/
+ENV/
+
+# Local editor and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Training, evaluation, and generated media artifacts
+runs/
+baselines/runs/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.gif
+*.mp4
+*.avi
+*.mov
+
+# Generated numeric logs and figures
+training_stats.csv
+training_stats.jsonl
+training_step_rewards.jsonl
+eval_stats.json
+figures/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+
+# Keep LaTeX sources and intentionally exported PDFs trackable by default.
+
+# Project-local generated/export folders
 MASSpace_2026/

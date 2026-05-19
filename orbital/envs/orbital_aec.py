@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from pettingzoo import AECEnv
-from pettingzoo.utils import agent_selector, wrappers
+from pettingzoo.utils import wrappers
+from pettingzoo.utils.agent_selector import agent_selector
 
 from orbital.envs.core.config import OrbitalConfig
 from orbital.envs.core.dynamics import OrbitalCore
@@ -60,6 +61,7 @@ class OrbitalAECEnv(AECEnv):
             return
 
         agent = self.agent_selection
+        self._cumulative_rewards[agent] = 0.0
         self._pending_actions[agent] = int(action)
 
         if self._agent_selector.is_last():
@@ -88,7 +90,8 @@ class OrbitalAECEnv(AECEnv):
 def env(**kwargs: Any):
     """Return the wrapped AEC environment with standard PettingZoo wrappers."""
     environment = OrbitalAECEnv(**kwargs)
-    environment = wrappers.CaptureStdoutWrapper(environment)
+    if environment.render_mode == "human":
+        environment = wrappers.CaptureStdoutWrapper(environment)
     environment = wrappers.AssertOutOfBoundsWrapper(environment)
     environment = wrappers.OrderEnforcingWrapper(environment)
     return environment

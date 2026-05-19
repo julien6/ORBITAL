@@ -14,16 +14,33 @@ dependencies = [
   "numpy>=1.24",
   "gymnasium>=0.29",
   "pettingzoo>=1.24",
-  "networkx>=3.0"
+  "networkx>=3.0",
+  "torch>=2.0"
 ]
 
 [project.optional-dependencies]
 render = ["pygame>=2.5"]
 render3d = ["pyvista>=0.43", "vtk>=9.2"]
-dev = ["pytest>=7.0", "pettingzoo[test]>=1.24", "pygame>=2.5"]
+train = ["optuna>=3.0", "imageio>=2.31", "pyyaml>=6.0", "matplotlib>=3.7", "pettingzoo[butterfly]>=1.24"]
+dev = ["pytest>=7.0", "pettingzoo[test]>=1.24", "pygame>=2.5", "imageio>=2.31"]
+
+[project.scripts]
+marl-train = "marl_lib.cli:train_main"
+marl-eval = "marl_lib.cli:eval_main"
+marl-tune = "marl_lib.cli:tune_main"
+mma-export-org = "mma.cli:export_org_main"
 
 [tool.setuptools]
-packages = ["orbital", "orbital.envs", "orbital.envs.core", "orbital.envs.rendering"]
+packages = [
+  "orbital",
+  "orbital.envs",
+  "orbital.envs.core",
+  "orbital.envs.rendering",
+  "baselines",
+  "mma",
+  "mma.presets",
+  "marl_lib"
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

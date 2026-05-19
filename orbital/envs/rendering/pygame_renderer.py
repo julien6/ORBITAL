@@ -44,12 +44,19 @@ class PygameRenderer:
         self.screen.blit(surf, (x, y))
 
     def _role_tag(self, core, i: int) -> str:
-        energy_ratio = core.energy[i] / max(core.config.energy_budget, 1e-6)
-        if core.compromised_for[i] > 0 or energy_ratio < 0.25:
-            return "SAFE"
-        if core.buffered_data[i] > 1.0 or core._has_path_to_ground(i):
-            return "REL"
-        return "OBS"
+        return ""
+
+    def _action_tag(self, action: int) -> str:
+        return {
+            0: "OBS",
+            1: "REL_GRN",
+            2: "REL_SAT",
+            3: "DN",
+            4: "UP",
+            5: "PWR",
+            6: "SCAN",
+            7: "IDLE",
+        }.get(int(action), "IDLE")
 
     def _task_color(self, priority: float):
         p = float(np.clip(priority, 0.0, 1.0))
@@ -178,6 +185,9 @@ class PygameRenderer:
     def render(self, core, mode: str = "human", show_links: bool = True):
         self._ensure()
         pygame = self._pygame
+        baseline_debug = getattr(core, "baseline_debug", {}) or {}
+        debug_actions = baseline_debug.get("actions", {})
+        debug_roles = baseline_debug.get("roles", {})
         if mode == "human":
             if self.screen is None:
                 self.screen = pygame.display.set_mode((self.width, self.height))
@@ -357,6 +367,10 @@ class PygameRenderer:
                 p = self._orbit_to_point(theta=cur_theta, r=cur_r, cx=cx, cy=cy)
             sat_points.append(p)
 
+            health_arr = getattr(core, "health", core.energy)
+            if health_arr[i] <= 0:
+                self._trail_by_agent.pop(i, None)
+                continue
             tr = self._trail_by_agent.setdefault(i, [])
             if not tr or tr[-1] != p:
                 tr.append(p)
@@ -365,6 +379,10 @@ class PygameRenderer:
         self._last_t = core.t
 
         for i in range(core.num_agents):
+            health_arr = getattr(core, "health", core.energy)
+            if health_arr[i] <= 0:
+                self._trail_by_agent.pop(i, None)
+                continue
             tr = self._trail_by_agent.get(i, [])
             if len(tr) < 2:
                 continue
@@ -376,6 +394,9 @@ class PygameRenderer:
         if show_links:
             for i in range(core.num_agents):
                 for j in range(i + 1, core.num_agents):
+                    health_arr = getattr(core, "health", core.energy)
+                    if health_arr[i] <= 0 or health_arr[j] <= 0:
+                        continue
                     if core.comm_adj[i, j]:
                         p1 = sat_points[i]
                         p2 = sat_points[j]
@@ -384,7 +405,8 @@ class PygameRenderer:
                         for a, b in self._clip_line_to_earth(p1, p2, cx, cy, float(earth_r)):
                             pygame.draw.line(self.screen, link_color, a, b, 2 if highlighted else 1)
 
-        # Debris clouds are visualized as translucent hazard halos.
+        # Debris clouds are visualized as translucent hazard halos with a color
+        # intentionally separated from observation tasks.
         for d in getattr(core, "debris_clouds", []):
             if d.density <= 1e-4:
                 continue
@@ -392,12 +414,14 @@ class PygameRenderer:
             rr = int(6 + 32 * float(np.clip(d.spread / max(1e-3, core.config.debris_spread_max), 0.0, 1.0)))
             alpha = int(40 + 120 * float(np.clip(d.density, 0.0, 1.0)))
             halo = pygame.Surface((2 * rr + 2, 2 * rr + 2), pygame.SRCALPHA)
-            pygame.draw.circle(halo, (255, 120, 70, alpha), (rr + 1, rr + 1), rr)
-            pygame.draw.circle(halo, (255, 165, 90, min(255, alpha + 40)), (rr + 1, rr + 1), max(3, rr // 2), 1)
+            pygame.draw.circle(halo, (154, 82, 214, alpha), (rr + 1, rr + 1), rr)
+            pygame.draw.circle(halo, (220, 122, 255, min(255, alpha + 40)), (rr + 1, rr + 1), max(3, rr // 2), 1)
             self.screen.blit(halo, (px - rr - 1, py - rr - 1))
 
-        for t in core.tasks:
+        for task_idx, t in enumerate(core.tasks):
             if not t.active:
+                continue
+            if hasattr(core, "task_is_known") and not core.task_is_known(task_idx):
                 continue
             p = map_px(t.theta, t.radius, t.phi)
             rad = 4 + int(5 * float(np.clip(t.priority, 0.0, 1.0)))
@@ -424,27 +448,44 @@ class PygameRenderer:
         for i in range(core.num_agents):
             x, y = sat_points[i]
             compromised = core.compromised_for[i] > 0
-            alive = core.energy[i] > 0
+            health_arr = getattr(core, "health", core.energy)
+            alive = health_arr[i] > 0
+            if not alive:
+                continue
             isolated = alive and int(core.comm_adj[i].sum()) == 0
-            role = self._role_tag(core, i)
+            agent_name = f"sat_{i}"
+            role = str(debug_roles.get(agent_name, ""))
             energy_ratio = core.energy[i] / max(core.config.energy_budget, 1e-6)
-            color = (90, 180, 255) if alive else (70, 70, 70)
+            health_ratio = health_arr[i] / max(getattr(core.config, "health_budget", core.config.energy_budget), 1e-6)
+            buffer_ratio = core.buffered_data[i] / max(getattr(core.config, "data_capacity", 3.0), 1e-6)
+            color = (90, 180, 255)
             if role == "REL" and alive:
                 color = (115, 214, 255)
             elif role == "SAFE" and alive:
                 color = (144, 226, 175)
 
             if isolated:
-                pygame.draw.circle(self.screen, (255, 195, 90), (x, y), 16, 2)
+                iso = pygame.Surface((42, 42), pygame.SRCALPHA)
+                pygame.draw.circle(iso, (255, 205, 80, 220), (21, 21), 17, 2)
+                for cut in range(0, 360, 45):
+                    ang = np.deg2rad(cut)
+                    p1 = (int(21 + 14 * np.cos(ang)), int(21 + 14 * np.sin(ang)))
+                    p2 = (int(21 + 20 * np.cos(ang)), int(21 + 20 * np.sin(ang)))
+                    pygame.draw.line(iso, (12, 18, 42, 255), p1, p2, 3)
+                self.screen.blit(iso, (x - 21, y - 21))
             pygame.draw.circle(self.screen, color, (x, y), 10)
             if compromised:
                 pulse = 13 + ((core.t + i) % 2)
                 pygame.draw.circle(self.screen, (255, 74, 74), (x, y), pulse, 2)
+            if getattr(core, "jammed", np.zeros(core.num_agents, dtype=bool))[i] and alive:
+                self._draw_dashed_line((x - 18, y - 18), (x + 18, y + 18), (255, 80, 95), width=2, dash=4, gap=3)
+                self._draw_dashed_line((x - 18, y + 18), (x + 18, y - 18), (255, 80, 95), width=2, dash=4, gap=3)
+
+            b = float(np.clip(buffer_ratio, 0.0, 1.0))
+            pygame.draw.rect(self.screen, (38, 48, 88), (x - 13, y - 22, 26, 4), border_radius=2)
+            pygame.draw.rect(self.screen, (116, 228, 255), (x - 13, y - 22, int(26 * b), 4), border_radius=2)
 
             if core.buffered_data[i] > 0.0 and alive:
-                b = float(np.clip(core.buffered_data[i] / 3.0, 0.0, 1.0))
-                pygame.draw.rect(self.screen, (38, 48, 88), (x - 12, y - 20, 24, 4), border_radius=2)
-                pygame.draw.rect(self.screen, (116, 228, 255), (x - 12, y - 20, int(24 * b), 4), border_radius=2)
                 can_downlink = core._direct_ground_contact(i) or core._has_path_to_ground(i)
                 if core.config.world_dim == 3:
                     sat_vec = core.positions[i]
@@ -467,25 +508,42 @@ class PygameRenderer:
                 pygame.draw.circle(self.screen, (88, 242, 154), (x + 11, y - 10), 3)
 
             e = energy_ratio
-            pygame.draw.rect(self.screen, (40, 40, 40), (x - 12, y + 14, 24, 4))
-            pygame.draw.rect(self.screen, (80, 220, 100), (x - 12, y + 14, int(24 * max(0.0, min(1.0, e))), 4))
+            h = health_ratio
+            pygame.draw.rect(self.screen, (40, 40, 40), (x - 13, y + 14, 26, 4))
+            pygame.draw.rect(self.screen, (80, 220, 100), (x - 13, y + 14, int(26 * max(0.0, min(1.0, e))), 4))
+            pygame.draw.rect(self.screen, (40, 40, 40), (x - 13, y + 19, 26, 4))
+            pygame.draw.rect(self.screen, (255, 102, 116), (x - 13, y + 19, int(26 * max(0.0, min(1.0, h))), 4))
             self._draw_text(str(i), x - 4, y - 35, (215, 228, 255), size=12, bold=True)
-            self._draw_text(role, x - 14, y + 21, (160, 224, 244), size=10, bold=True)
+            if role:
+                self._draw_text(role, x - 14, y + 25, (160, 224, 244), size=10, bold=True)
+            if agent_name in debug_actions:
+                action = self._action_tag(debug_actions[agent_name])
+                action_y = y + (37 if role else 27)
+                self._draw_text(action, x - 22, action_y, (236, 214, 142), size=9, bold=True)
 
-        active_tasks = sum(1 for t in core.tasks if t.active)
+        active_tasks = sum(
+            1
+            for idx, t in enumerate(core.tasks)
+            if t.active and (not hasattr(core, "task_is_known") or core.task_is_known(idx))
+        )
         active_debris = sum(1 for d in getattr(core, "debris_clouds", []) if d.density > 1e-4)
-        alive_count = int((core.energy > 0).sum())
-        isolated_count = sum(1 for i in range(core.num_agents) if core.energy[i] > 0 and int(core.comm_adj[i].sum()) == 0)
+        health_arr = getattr(core, "health", core.energy)
+        alive_count = int((health_arr > 0).sum())
+        isolated_count = sum(1 for i in range(core.num_agents) if health_arr[i] > 0 and int(core.comm_adj[i].sum()) == 0)
         y = panel_rect.top + 16
         x = panel_rect.left + 14
 
         self._draw_text("ORBITAL MISSION VIEW", x, y, (226, 234, 255), size=18, bold=True)
         y += 34
+        baseline_name = baseline_debug.get("name")
+        if baseline_name:
+            self._draw_text(str(baseline_name), x, y, (236, 214, 142), size=13, bold=True)
+            y += 24
         self._draw_text(f"t = {core.t}/{core.config.max_steps}", x, y, (190, 205, 240))
         y += 26
         self._draw_text(f"Alive: {alive_count}/{core.num_agents}", x, y, (173, 240, 188))
         y += 20
-        self._draw_text(f"Active tasks: {active_tasks}", x, y, (246, 223, 132))
+        self._draw_text(f"Known active tasks: {active_tasks}", x, y, (246, 223, 132))
         y += 20
         self._draw_text(f"Isolated sats: {isolated_count}", x, y, (255, 197, 106))
         y += 20
@@ -501,53 +559,54 @@ class PygameRenderer:
         y += 18
         self._draw_text(f"delivery: {rc.get('delivery', 0.0):>5.2f}", x, y, (128, 229, 252))
         y += 18
+        self._draw_text(f"knowledge: {rc.get('knowledge', 0.0):>5.2f}", x, y, (190, 210, 255))
+        y += 18
         self._draw_text(f"energy: -{rc.get('energy', 0.0):>4.2f}", x, y, (255, 181, 108))
+        y += 18
+        self._draw_text(f"health: -{rc.get('health', 0.0):>4.2f}", x, y, (255, 126, 146))
         y += 18
         self._draw_text(f"isolation: -{rc.get('isolation', 0.0):>4.2f}", x, y, (255, 191, 118))
         y += 18
-        self._draw_text(f"failure: -{rc.get('failure', 0.0):>4.2f}", x, y, (255, 126, 126))
+        self._draw_text(f"data loss: -{rc.get('data_loss', 0.0):>4.2f}", x, y, (255, 126, 126))
         y += 18
         self._draw_text(f"cyber: -{rc.get('cyber', 0.0):>4.2f}", x, y, (255, 142, 164))
         y += 18
-        self._draw_text(f"debris: -{rc.get('debris_risk', 0.0):>4.2f}", x, y, (255, 166, 124))
+        self._draw_text(f"jam/forced: -{rc.get('jam', 0.0) + rc.get('forced_action', 0.0):>4.2f}", x, y, (255, 142, 164))
+        y += 18
+        self._draw_text(f"debris: -{rc.get('debris_risk', 0.0):>4.2f}", x, y, (210, 146, 255))
         y += 18
         self._draw_text(f"collision: -{rc.get('collision', 0.0):>4.2f}", x, y, (255, 98, 82))
 
-        y += 30
+        y += 20
         self._draw_text("Legend", x, y, (218, 231, 255), size=14, bold=True)
-        y += 22
-        pygame.draw.circle(self.screen, (58, 114, 196), (x + 8, y + 8), 6)
-        self._draw_text("Earth (center disk)", x + 20, y, (202, 218, 246), size=12)
-        y += 18
-        pygame.draw.circle(self.screen, (88, 118, 170), (x + 8, y + 8), 7, 1)
-        self._draw_text("LEO orbital shells", x + 20, y, (202, 218, 246), size=12)
-        y += 18
+        y += 20
         pygame.draw.circle(self.screen, (244, 196, 89), (x + 8, y + 8), 6)
-        self._draw_text("Task (brighter = higher priority)", x + 20, y, (202, 218, 246), size=12)
-        y += 18
+        self._draw_text("Known task (priority color)", x + 20, y, (202, 218, 246), size=12)
+        y += 16
         pygame.draw.rect(self.screen, (124, 236, 150), (x + 2, y + 1, 12, 12), border_radius=2)
-        self._draw_text("Ground stations + downlink zones", x + 20, y, (202, 218, 246), size=12)
-        y += 18
-        pygame.draw.circle(self.screen, (255, 130, 85), (x + 8, y + 8), 6)
+        self._draw_text("Ground station + contact zone", x + 20, y, (202, 218, 246), size=12)
+        y += 16
+        pygame.draw.circle(self.screen, (154, 82, 214), (x + 8, y + 8), 6)
         self._draw_text("Orbital debris cloud (hazard)", x + 20, y, (202, 218, 246), size=12)
-        y += 18
+        y += 16
         pygame.draw.line(self.screen, (112, 196, 255), (x + 2, y + 7), (x + 14, y + 7), 2)
         self._draw_text("Comms link (clipped by Earth)", x + 20, y, (202, 218, 246), size=12)
-        y += 18
+        y += 16
         pygame.draw.line(self.screen, (102, 238, 165), (x + 2, y + 7), (x + 14, y + 7), 1)
-        self._draw_text("Downlink feasible (buffered sat)", x + 20, y, (202, 218, 246), size=12)
-        y += 18
+        self._draw_text("Ground route feasible", x + 20, y, (202, 218, 246), size=12)
+        y += 16
         self._draw_dashed_line((x + 2, y + 7), (x + 14, y + 7), (244, 132, 132), width=1, dash=3, gap=2)
-        self._draw_text("Downlink blocked (buffered sat)", x + 20, y, (202, 218, 246), size=12)
-        y += 18
-        pygame.draw.line(self.screen, (70, 130, 220), (x + 2, y + 7), (x + 14, y + 7), 1)
-        self._draw_text("Recent orbital trail", x + 20, y, (202, 218, 246), size=12)
-        y += 18
+        self._draw_text("No ground route", x + 20, y, (202, 218, 246), size=12)
+        y += 16
         pygame.draw.circle(self.screen, (255, 74, 74), (x + 8, y + 8), 7, 2)
-        self._draw_text("Compromised satellite alert", x + 20, y, (202, 218, 246), size=12)
-        y += 18
+        self._draw_text("Malware compromised", x + 20, y, (202, 218, 246), size=12)
+        y += 16
         pygame.draw.rect(self.screen, (116, 228, 255), (x + 2, y + 5, 12, 4), border_radius=2)
-        self._draw_text("Buffered data bar (top of sat)", x + 20, y, (202, 218, 246), size=12)
+        self._draw_text("Buffer bar (top)", x + 20, y, (202, 218, 246), size=12)
+        y += 16
+        pygame.draw.rect(self.screen, (80, 220, 100), (x + 2, y + 3, 12, 3), border_radius=2)
+        pygame.draw.rect(self.screen, (255, 102, 116), (x + 2, y + 8, 12, 3), border_radius=2)
+        self._draw_text("Energy / health bars", x + 20, y, (202, 218, 246), size=12)
 
         if mode == "human":
             pygame.display.flip()

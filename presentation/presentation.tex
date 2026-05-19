@@ -1,0 +1,624 @@
+\documentclass[9pt, aspectratio=169]{beamer}
+% \documentclass[10pt]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usetheme{Frankfurt}
+
+\usepackage[backend=biber, style=authoryear]{biblatex}
+\addbibresource{local_references.bib}
+
+%\usepackage{lmodern}
+\usepackage{amsfonts,amssymb,amsmath}
+\usepackage[english]{babel}
+\usetheme{Frankfurt}
+
+\usepackage{csquotes}
+\usepackage{setspace}
+
+\usepackage{colortbl}
+\usepackage{tabularx}
+\renewcommand\tabularxcolumn[1]{m{#1}}
+
+% --- Tickz
+\usepackage{physics}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{mathdots}
+\usepackage{yhmath}
+\usepackage{cancel}
+\usepackage{color}
+\usepackage{siunitx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{gensymb}
+\usepackage{tabularx}
+\usepackage{extarrows}
+\usepackage{booktabs}
+\usetikzlibrary{fadings}
+\usetikzlibrary{patterns}
+\usetikzlibrary{shadows.blur}
+\usetikzlibrary{shapes}
+
+% ---------
+
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage{amssymb}
+\usepackage{adjustbox}
+\usepackage{pifont}
+\usepackage[inkscapeformat=png]{svg}
+\usepackage{graphicx}
+\usepackage{times}
+\setbeamertemplate{caption}[numbered]
+% % \setbeamertemplate{bibliography item}{[\theenumiv]}
+
+\setbeamerfont{bibliography item}{size=\tiny}
+\setbeamerfont{bibliography entry author}{size=\tiny}
+\setbeamerfont{bibliography entry title}{size=\tiny}
+\setbeamerfont{bibliography entry location}{size=\tiny}
+\setbeamerfont{bibliography entry note}{size=\tiny}
+
+\setbeamerfont{frametitle}{size=\large}
+
+\usepackage{caption}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{animate}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+ 
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+ 
+\lstset{style=mystyle}
+
+
+\usepackage{ragged2e}
+\setbeamercolor{section in foot}{fg=white,bg=darkorange}
+\setbeamercolor{subsection in foot}{fg=white,bg=darkorange}
+\setbeamercolor{frametitle}{fg=white, bg=darkorange}
+\setbeamercolor{title}{fg=white, bg=darkorange}
+\setbeamercolor{frame}{bg=darkorange}
+\setbeamercolor{block title}{bg=darkorange,fg=white}
+
+\setbeamercolor{item}{fg=darkorange}
+
+\definecolor{darkorange}{rgb}{0.81, 0.52, 0.05}
+\definecolor{darkorange2}{rgb}{1, 0.64, 0.2}
+\definecolor{honeydew}{rgb}{1, 0.85, 0.45}
+
+
+\newenvironment{variableblock}[3]{%
+  \setbeamercolor{block body}{#2}
+  \setbeamercolor{block title}{#3}
+  \begin{block}{#1}}{\end{block}}
+
+\newenvironment{prosblock}[1]{%
+  % \setbeamercolor{block body}{bg=blue,fg=white}
+  \setbeamercolor{block title}{bg=blue,fg=white}
+  \begin{block}{#1}}{\end{block}}
+
+\newenvironment{consblock}[1]{%
+  % \setbeamercolor{block body}{bg=red,fg=white}
+  \setbeamercolor{block title}{bg=red,fg=white}
+  \begin{block}{#1}}{\end{block}}
+
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\renewcommand{\arraystretch}{1.5}
+
+% Please add the following required packages to your document preamble:
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{colortbl}
+% Beamer presentation requires \usepackage{colortbl} instead of \usepackage[table,xcdraw]{xcolor}
+
+\usepackage{tabularray}\UseTblrLibrary{varwidth}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+% \usepackage{cite}
+\usepackage{amsmath}
+\newcommand{\probP}{\text{I\kern-0.15em P}}
+\usepackage{etoolbox}
+\patchcmd{\thebibliography}{\section*{\refname}}{}{}{}
+
+\setlength\tabcolsep{0.5pt}
+
+\renewcommand{\arraystretch}{0.9}
+\setlength{\tabcolsep}{2pt}
+
+\usepackage{pgffor}
+
+\setbeamerfont{bibliography item}{size=\tiny}
+\setbeamerfont{bibliography entry author}{size=\tiny}
+\setbeamerfont{bibliography entry title}{size=\tiny}
+\setbeamerfont{bibliography entry location}{size=\tiny}
+\setbeamerfont{bibliography entry note}{size=\tiny}
+
+\setbeamerfont{bibliography entry author}{shape=\upshape,series=\mdseries,size=\footnotesize}
+\setbeamerfont{bibliography entry title}{shape=\slshape,series=\mdseries,size=\footnotesize}
+\setbeamerfont{bibliography entry journal}{shape=\upshape,series=\mdseries,size=\footnotesize}
+\setbeamerfont{bibliography entry note}{shape=\upshape,series=\mdseries,size=\footnotesize}
+
+\renewcommand*{\bibfont}{\scriptsize}
+
+\newenvironment<>{varblock}[2][.9\textwidth]{%
+  \setlength{\textwidth}{#1}
+  \begin{actionenv}#3%
+    \def\insertblocktitle{#2}%
+    \par%
+    \usebeamertemplate{block begin}}
+  {\par%
+    \usebeamertemplate{block end}%
+  \end{actionenv}}
+
+% \setbeamertemplate{footline}[frame number]
+
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hfill
+  \usebeamercolor[fg]{page number in head/foot}%
+  \scriptsize\insertframenumber/\inserttotalframenumber%
+  \hspace{1em}
+}
+
+\newcommand{\BaselineAnim}[2][0.47\linewidth]{%
+  \animategraphics[autoplay,loop,width=#1]{8}{figures/baselines/#2/frame}{0}{199}%
+}
+
+\newcommand{\ComparisonAnimations}[2]{%
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.49\textwidth}
+      \centering
+      {\footnotesize\textbf{Reference: ORBITAL-MOISE+MARL}}\\[-0.05cm]
+      \BaselineAnim[0.92\linewidth]{ORBITAL-MOISE+MARL}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \centering
+      {\footnotesize\textbf{#2}}\\[-0.05cm]
+      \BaselineAnim[0.92\linewidth]{#1}
+    \end{column}
+  \end{columns}
+}
+
+\newcommand{\CompactItem}[1]{\item \scriptsize #1}
+
+\newcommand{\ExplainerImage}[2][0.92\linewidth]{%
+  \includegraphics[width=#1]{figures/explainer/#2}%
+}
+
+
+\begin{document}
+
+\author{
+  \textbf{Julien Soulé}$^{1}$}
+
+\title{\textbf{Presentation of the ORBITAL project and results}}
+
+\subtitle{Presentation}
+
+\institute{
+  {\phantom{x}$^{1}$ \footnotesize \textit{University of Luxembourg, SnT, Luxembourg, Luxembourg}} \\ \phantom{x}}
+
+
+\date{\textit{\footnotesize \today}}
+
+%\subject{}
+\setbeamercovered{transparent}
+\setbeamertemplate{navigation symbols}{}
+\begin{frame}[plain]
+  \maketitle\vspace{-0.8cm}
+
+  \ \\
+
+  \begin{minipage}{\textwidth}
+    \centering
+    \textit{\href{mailto:julien.soule@uni.lu}{julien.soule@uni.lu}}
+  \end{minipage}
+
+
+\end{frame}
+
+\begin{frame}{First: what is the mission loop?}
+  \scriptsize
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \ExplainerImage[0.84\linewidth]{environment_overview.png}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \begin{block}{What agents are trying to do}
+        \begin{enumerate}
+          \item \textbf{Discover/acquire:} discover known-local tasks, then observe yellow/or tasks near their orbit.
+          \item \textbf{Carry:} store acquired data in their local buffer.
+          \item \textbf{Deliver:} use REL\_GRN for direct ground delivery or REL\_SAT for satellite proxy routing.
+          \item \textbf{Stabilize:} preserve energy, health, connectivity, cyber state, and debris safety.
+        \end{enumerate}
+      \end{block}
+      \begin{block}{Most important idea}
+        Observing a task is not enough. A satellite can collect data and still fail the mission if that data remains in its buffer and never reaches ground.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[shrink=8]{Visual grammar: what does each symbol mean?}
+  \scriptsize
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.31\textwidth}
+      \centering
+      \ExplainerImage[0.70\linewidth]{satellite_marker.png}
+      \begin{block}{Satellite marker}
+        Number = satellite id. Cyan top bar = buffered data. Green lower bar = energy. Red lower bar = health. Text labels show role and last action.
+      \end{block}
+    \end{column}
+    \begin{column}{0.31\textwidth}
+      \centering
+      \ExplainerImage[0.70\linewidth]{observation_task.png}
+      \begin{block}{Observation task}
+        Yellow/or dots are known active tasks. Brighter/larger means higher priority. A successful OBS action removes the task and fills a buffer.
+      \end{block}
+    \end{column}
+    \begin{column}{0.31\textwidth}
+      \centering
+      \ExplainerImage[0.58\linewidth]{mission_panel.png}
+      \begin{block}{Mission panel}
+        Watch alive satellites, isolated satellites, delivered value, and reward components to understand the global effect.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[shrink=8]{Connectivity: satellite links vs ground routes}
+  \scriptsize
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \ExplainerImage[0.82\linewidth]{communication_links.png}
+      \begin{block}{Blue communication links}
+        Blue lines mean satellites can communicate at this step. They are not deliveries by themselves; they are possible relay paths.
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \ExplainerImage[0.40\linewidth]{ground_downlink.png}
+      \begin{block}{Green ground-route cue}
+        A green square is a ground station. A green ground-route line means buffered data currently has a feasible path to ground. REL\_GRN delivers through direct ground contact; REL\_SAT moves data and task knowledge through satellite links.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Labels: role is not exactly action}
+  \scriptsize
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.45\textwidth}
+      \centering
+      \ExplainerImage[0.78\linewidth]{satellite_marker.png}
+    \end{column}
+    \begin{column}{0.53\textwidth}
+      \begin{block}{Role labels: intended responsibility}
+        \begin{tabularx}{\linewidth}{>{\bfseries}l X}
+          OBS  & Observer role: prioritize acquiring task data.                \\
+          REL  & Relay role: prioritize delivery and communication utility.    \\
+          SAFE & Safety role: preserve energy, cyber health, or debris safety. \\
+          FREE & No organizational role constraint.                            \\
+          SOFT & Reward-shaped guidance, but no hard role enforcement.         \\
+        \end{tabularx}
+      \end{block}
+      \begin{block}{Action labels: what was just executed}
+        \begin{tabularx}{\linewidth}{>{\bfseries}l X}
+          OBS  & Observe a known local task. \quad REL\_GRN: exchange with ground. \quad REL\_SAT: exchange with a satellite. \\
+          PWR  & LowPower / recharge-oriented safe mode.                                         \\
+          SCAN & CyberScan. \quad UP/DN: orbit maneuver.                                         \\
+          IDLE & Do nothing mission-active this step; keep state/buffer, spend only idle energy. \\
+        \end{tabularx}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Action transition: Observe}
+  \scriptsize
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.33\textwidth}
+      \centering
+      \ExplainerImage[0.70\linewidth]{observation_task.png}
+      \begin{block}{Before}
+        A nearby active task is visible as a warm dot. The satellite must be close enough to sense it.
+      \end{block}
+    \end{column}
+    \begin{column}{0.30\textwidth}
+      \begin{block}{Action}
+        \textbf{OBS / Observe}: the satellite spends energy to service one local task.
+      \end{block}
+      \begin{block}{Immediate effect}
+        The task becomes inactive and the satellite's cyan buffer increases.
+      \end{block}
+    \end{column}
+    \begin{column}{0.33\textwidth}
+      \centering
+      \ExplainerImage[0.78\linewidth]{satellite_marker.png}
+      \begin{block}{After}
+        The data is only \textit{stored}. It is not mission value yet. Delivery still requires REL\_GRN at ground contact, possibly after REL\_SAT proxy routing.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Action transition: Relay}
+  \scriptsize
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.34\textwidth}
+      \centering
+      \ExplainerImage[0.70\linewidth]{satellite_marker.png}
+      \begin{block}{Before}
+        A satellite has buffered data: cyan bar above the marker.
+      \end{block}
+    \end{column}
+    \begin{column}{0.30\textwidth}
+      \begin{block}{Action}
+        \textbf{REL\_GRN / Relay ground}: deliver data and exchange task knowledge with a ground station. \textbf{REL\_SAT / Relay satellite}: move data and task knowledge to a better-positioned neighbor.
+      \end{block}
+      \begin{block}{Requirement}
+        REL\_GRN requires direct ground contact. REL\_SAT requires a live communication link to another satellite.
+      \end{block}
+    \end{column}
+    \begin{column}{0.32\textwidth}
+      \centering
+      \ExplainerImage[0.48\linewidth]{ground_downlink.png}
+      \begin{block}{After}
+        If ground contact is feasible, REL\_GRN decreases the buffer and increases delivered total. REL\_SAT can decrease one buffer while increasing another closer to ground.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Action transitions: safety and waiting}
+  \scriptsize
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.38\textwidth}
+      \centering
+      \ExplainerImage[0.66\linewidth]{isolation_task_pressure.png}
+      \begin{block}{Stress cues}
+        Yellow dashed ring = isolated; red ring = malware compromise; purple/magenta halos = debris. These are reasons to stop pure acquisition.
+      \end{block}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \begin{block}{Before $\rightarrow$ action $\rightarrow$ after}
+        \begin{tabularx}{\linewidth}{>{\bfseries}l X}
+          PWR   & LowPower: spend little energy and recover when the satellite is sunlit; buffer remains stored.                              \\
+          SCAN  & CyberScan: reduce/clear malware compromise; look for red compromise rings disappearing over time.                           \\
+          UP/DN & OrbitUp/OrbitDown: maneuver to reduce local debris conjunction risk; radius changes between shells.                                  \\
+          IDLE  & No active mission operation. The satellite keeps its buffer and position evolves, but it does not observe, relay, scan, or maneuver. \\
+        \end{tabularx}
+      \end{block}
+      \begin{block}{Why IDLE after Observe?}
+        After OBS, the satellite may wait because it has no task nearby, no delivery path yet, a role constraint says to hold, or another action would waste energy. IDLE does not erase the buffer; it simply delays delivery.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{How to read a policy live}
+  \scriptsize
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Ask these questions while watching}
+        \begin{enumerate}
+          \item Are satellites observing tasks or ignoring them?
+          \item Are cyan buffers growing without delivery?
+          \item Do REL\_GRN actions happen at ground contact and REL\_SAT actions route data through neighbors?
+          \item Do SAFE/PWR/SCAN/UP/DN actions appear when stress appears?
+          \item Are isolated satellites still observing myopically?
+        \end{enumerate}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Good behavior in one sentence}
+        The fleet should discover tasks, acquire data when tasks are valuable, route it to ground, and switch to safety actions before energy, health, cyber, debris, or isolation collapses the mission.
+      \end{block}
+      \begin{block}{What the comparisons show}
+        The baselines differ mostly in when they switch between acquisition, delivery, and stabilization.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{ORBITAL in one operational view}
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.60\textwidth}
+      \centering
+      \BaselineAnim[0.94\linewidth]{ORBITAL-MOISE+MARL}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \scriptsize
+      \begin{block}{What to read on the animation}
+        \begin{itemize}
+          \item Earth is centered; the three rings are LEO shells.
+          \item Numbered satellites carry role/action labels plus buffer, energy, and health bars.
+          \item Yellow/or dots are known observation tasks; green squares are ground stations.
+          \item Blue links show inter-satellite communication; green ground-route lines show delivery opportunities.
+          \item Purple/magenta halos indicate debris risk; red rings indicate malware compromise; yellow dashed rings indicate isolation.
+        \end{itemize}
+      \end{block}
+      \begin{block}{Benchmark goal}
+        Maximize useful Earth-observation data delivered to ground while preserving fleet health, connectivity, and resilience.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Acquire--deliver--stabilize doctrine}
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \BaselineAnim[0.98\linewidth]{ORBITAL-MOISE+MARL}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \scriptsize
+      \begin{block}{Why the task is non-trivial}
+        \begin{itemize}
+          \item \textbf{Discover/acquire:} satellites learn dynamic high-value targets, observe known reachable tasks, and store data locally.
+          \item \textbf{Deliver:} data only becomes mission value when REL\_GRN reaches a ground station, often after REL\_SAT proxy routing.
+          \item \textbf{Stabilize:} energy, health, malware compromise, isolation, and debris risk can collapse the mission if ignored.
+        \end{itemize}
+      \end{block}
+      \begin{block}{Core design feature}
+        Observation and delivery are decoupled. A policy can look locally productive while failing globally if buffers never reach ground.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Baseline ladder: from rules to organization}
+  \scriptsize
+  \begin{table}
+    \centering
+    \begin{tabularx}{0.96\textwidth}{>{\bfseries}l X X}
+      \toprule
+      Baseline           & Main visual signature                             & Main limitation                                                 \\
+      \midrule
+      RB-Rule            & OBS-heavy myopic acquisition                       & Late REL\_GRN, little proxy routing, weak stress adaptation      \\
+      RB-Relay-heavy     & REL\_GRN whenever possible, frequent REL\_SAT      & Conservative, under-observes tasks                              \\
+      PB-DCOP-lite       & Periodic OBS/REL/GRN/SAFE blocks                   & Role plans lag when links/tasks/cyber states shift              \\
+      LB-Unconstrained   & FREE noisy action mix                              & Active but unsafe and weakly explainable                        \\
+      LB-RewardOnly      & SOFT score-driven blend of all actions             & Incentives guide but do not enforce structure                   \\
+      LB-ActionOnly      & Rigid OBS/SAT/GRN/SAFE masks                       & Disciplined but can idle or miss mission value                  \\
+      ORBITAL-MOISE+MARL & Phase-aware discover/acquire/deliver/resilience    & Structured reference controller                                 \\
+      \bottomrule
+    \end{tabularx}
+  \end{table}
+  \vspace{0.15cm}
+  \begin{center}
+    \small Reference comparison strategy: every following slide keeps \textbf{ORBITAL-MOISE+MARL on the left} and the comparison baseline on the right.
+  \end{center}
+\end{frame}
+
+\begin{frame}{Reference vs RB-Rule}
+  \ComparisonAnimations{RB-Rule priority-first}{RB-Rule priority-first}
+  \vspace{-0.1cm}
+  \begin{block}{Synthetic comparison}
+    \begin{itemize}
+      \CompactItem{MOISE+MARL shifts between discovery, acquisition, delivery, and resilience; RB-Rule mostly keeps pressing OBS.}
+      \CompactItem{In RB-Rule, look for OBS persistence and cyan buffer growth before late REL\_GRN attempts.}
+      \CompactItem{Key message: interpretability is high, but the policy is myopic and reacts late to delivery, energy, cyber, and debris pressure.}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Reference vs RB-Relay-heavy}
+  \ComparisonAnimations{RB-Relay-heavy}{RB-Relay-heavy}
+  \vspace{-0.1cm}
+  \begin{block}{Synthetic comparison}
+    \begin{itemize}
+      \CompactItem{MOISE+MARL relays when delivery is valuable, but still keeps observers active when known tasks are reachable.}
+      \CompactItem{RB-Relay-heavy should show many GRN/REL labels and REL\_GRN/REL\_SAT actions, often before enough data is collected.}
+      \CompactItem{Key message: immediate delivery discipline can starve acquisition and waste relay opportunities.}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Reference vs PB-DCOP-lite}
+  \ComparisonAnimations{PB-DCOP-lite}{PB-DCOP-lite}
+  \vspace{-0.1cm}
+  \begin{block}{Synthetic comparison}
+    \begin{itemize}
+      \CompactItem{MOISE+MARL adapts roles continuously through organizational guides; PB-DCOP-lite freezes OBS/REL/GRN/SAFE blocks for several steps.}
+      \CompactItem{PB-DCOP-lite should look clean and blocky: ground relayers, satellite relayers, observers, and safety agents.}
+      \CompactItem{Key message: planning improves structure, but assignments can lag behind fast link drops, cyber events, and debris drift.}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Reference vs LB-Unconstrained}
+  \ComparisonAnimations{LB-Unconstrained}{LB-Unconstrained}
+  \vspace{-0.1cm}
+  \begin{block}{Synthetic comparison}
+    \begin{itemize}
+      \CompactItem{MOISE+MARL constrains behavior through roles and safety overrides; LB-Unconstrained keeps full action freedom.}
+      \CompactItem{On the right, FREE labels indicate agents can observe, relay, idle, maneuver, power, or scan without organizational discipline.}
+      \CompactItem{Key message: unconstrained learning can be active and adaptive, but it is brittle, less auditable, and prone to unsafe persistence.}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Reference vs LB-RewardOnly}
+  \ComparisonAnimations{LB-RewardOnly}{LB-RewardOnly}
+  \vspace{-0.1cm}
+  \begin{block}{Synthetic comparison}
+    \begin{itemize}
+      \CompactItem{MOISE+MARL combines reward guidance with role-action control; RewardOnly samples from soft scores for OBS, REL\_GRN, REL\_SAT, and safety.}
+      \CompactItem{The SOFT label means the policy is encouraged to balance task, delivery, and safety, but actions remain unconstrained.}
+      \CompactItem{Key message: reward shaping improves alignment, yet cannot guarantee role consistency or safety compliance by itself.}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Reference vs LB-ActionOnly}
+  \ComparisonAnimations{LB-ActionOnly}{LB-ActionOnly}
+  \vspace{-0.1cm}
+  \begin{block}{Synthetic comparison}
+    \begin{itemize}
+      \CompactItem{MOISE+MARL uses flexible phase-aware roles; ActionOnly enforces fixed OBS/SAT/GRN/SAFE action masks without mission shaping.}
+      \CompactItem{The right side should show rigid specialization, including idling when a fixed role cannot act.}
+      \CompactItem{Key message: masks improve controllability and explainability, but can become rigid when mission value requires flexible role switching.}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Overall interpretation}
+  \scriptsize
+  \begin{columns}[T,totalwidth=\textwidth]
+    \begin{column}{0.46\textwidth}
+      \begin{block}{What improves across the ladder}
+        \begin{itemize}
+          \item From local rules to structured role allocation.
+          \item From raw action freedom to auditable role-action discipline.
+          \item From immediate task servicing to long-horizon acquire--deliver--stabilize behavior.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \begin{block}{Why ORBITAL-MOISE+MARL is the reference}
+        \begin{itemize}
+          \item Better delivery continuity without abandoning acquisition.
+          \item Safety reactions are explicit and visually explainable.
+          \item Role specialization appears at trajectory level, not only as aggregate reward.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vspace{0.4cm}
+  \begin{center}
+    \Large ORBITAL makes coordination failures visible, not only measurable.
+  \end{center}
+\end{frame}
+
+
+
+\end{document}
