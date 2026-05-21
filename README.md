@@ -6,7 +6,7 @@
 
 ORBITAL (*Orbital Resilient Benchmark for Interactive Task-aware Autonomous Learning*) is a PettingZoo multi-agent environment where a satellite constellation must keep a mission running under resource pressure and cyber disruption.
 
-It is designed as a neutral benchmark: the environment does not impose a coordination method. You can plug in value-based MARL, policy gradient, planning, centralized training, decentralized execution, or custom protocols.
+This repository contains the standalone environment, its renderers, and small examples that exercise it directly.
 
 The collective goal is simple to state and hard to optimize: maximize useful data delivered to ground while keeping the fleet alive, connected, and resilient.
 
@@ -120,7 +120,7 @@ This models risk-aware autonomy (screening + mitigation) rather than static obst
 
 ## Observation and Action Spaces
 
-ORBITAL intentionally uses **fixed-size vector observations only** for MARL compatibility and reproducibility.
+ORBITAL intentionally uses **fixed-size vector observations only** for stable observations and reproducibility.
 
 * Observation: `Box(shape=(20,), dtype=np.float32)`
 * Action: `Discrete(8)`
@@ -139,22 +139,6 @@ Action IDs:
 | 7 | IDLE |
 
 Full observation semantics are documented in `docs/ENV_SPECS.md` .
-
-## MAPPO and MOISE+MARL
-
-ORBITAL includes two internal training packages:
-
-* `cleanmarl`: local CleanMARL integration used as the official MARL implementation, including MAPPO, TensorBoard logging, checkpoints, evaluation, GIF export, and optional Optuna tuning.
-* `mma`: MOISE+MARL organization wrapper. Roles correct invalid actions after the policy samples freely; goals shape rewards during training only.
-
-Starter commands:
-
-```bash
-mma-export-org --preset orbital_basic --out configs/orgs/orbital_basic.json
-cleanmarl-orbital-train --organization-path configs/orgs/empty.json
-cleanmarl-orbital-eval --checkpoint runs/cleanmarl_orbital/best.pt --episodes 20 --gif runs/cleanmarl_orbital/eval.gif
-cleanmarl-orbital-tune --organization-path configs/orgs/empty.json --trials 50
-```
 
 ## Reward Design
 
@@ -279,36 +263,17 @@ orbital/
 examples/
   random_policy.py
   human_render.py
-tests/
 docs/
   ENV_SPECS.md
 ```
-
-## Testing
-
-```bash
-pytest -q
-```
-
-The test suite includes PettingZoo API conformance and deterministic-seed checks.
 
 ## Intended Use
 
 ORBITAL is useful for:
 
-* robust MARL under non-stationarity
-* communication-aware policy learning
+* direct environment rollouts with scripted, random, or external controllers
+* communication-aware fleet behavior experiments
 * cyber-resilience studies in cooperative settings
 * controlled ablations on energy, topology, and attack intensity
 
-It is not a high-fidelity orbital simulator; it is a research benchmark with intentionally simplified but interacting constraints.
-
-## Why Not Only DCOP / Rules / Vanilla MARL?
-
-ORBITAL is compatible with many controllers, but each family has limits in this setting:
-
-* fixed rules are easy to audit but brittle under non-stationary tasks and cyber perturbations
-* classical DCOP-style formulations are strong for explicit coordination but are harder to keep adaptive under partial observability and stochastic dynamics
-* vanilla MARL adapts well but does not provide explicit role/mission control by default
-
-This is why ORBITAL is suited to test hybrid approaches: keep learning-based adaptation while injecting explicit operational structure.
+It is not a high-fidelity orbital simulator; it is an environment with intentionally simplified but interacting constraints.

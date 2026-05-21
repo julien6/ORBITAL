@@ -1,4 +1,4 @@
-"""ORBITAL benchmark package."""
+"""ORBITAL environment package."""
 
 __all__ = ["env", "parallel_env", "env3d", "parallel_env3d"]
 

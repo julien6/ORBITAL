@@ -1,9 +1,0 @@
-{
-  "assignments": {},
-  "goals": {},
-  "metadata": {
-    "description": "Empty MMA organization for Pistonball: no roles, no goals, unconstrained MARL."
-  },
-  "name": "pistonball_empty",
-  "roles": {}
-}

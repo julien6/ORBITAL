@@ -14,8 +14,7 @@ from orbital.envs.rendering.factory import create_renderer
 class OrbitalParallelEnv(ParallelEnv):
     """PettingZoo Parallel API wrapper around the ORBITAL core.
 
-    Parallel mode is convenient for most MARL training loops where actions for
-    all alive agents are produced at each environment step.
+    Parallel mode accepts one action for every alive satellite at each step.
     """
 
     metadata = {"name": "orbital_parallel_v0", "render_modes": ["human", "rgb_array"], "is_parallelizable": True}

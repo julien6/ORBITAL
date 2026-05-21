@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "orbital"
 version = "0.1.0"
-description = "ORBITAL PettingZoo multi-agent benchmark"
+description = "ORBITAL PettingZoo multi-agent environment"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -14,46 +14,26 @@ dependencies = [
   "numpy>=1.24",
   "gymnasium>=0.29",
   "pettingzoo>=1.24",
-  "networkx>=3.0",
-  "torch>=2.0",
-  "tyro>=0.9",
-  "tensorboard>=2.12",
-  "pygame>=2.5",
-  "pyvista>=0.43",
-  "vtk>=9.2",
-  "optuna>=3.0",
-  "imageio>=2.31",
-  "pyyaml>=6.0",
-  "matplotlib>=3.7",
-  "wandb>=0.21",
-  "pettingzoo[butterfly]>=1.24",
-  "pytest>=7.0",
-  "pettingzoo[test]>=1.24",
-  "pygame>=2.5",
-  "imageio>=2.31"
+  "networkx>=3.0"
 ]
 
-
-[project.scripts]
-cleanmarl-orbital-train = "cleanmarl.orbital_cli:train_main"
-cleanmarl-orbital-eval = "cleanmarl.orbital_cli:eval_main"
-cleanmarl-orbital-tune = "cleanmarl.orbital_cli:tune_main"
-mma-export-org = "mma.cli:export_org_main"
+[project.optional-dependencies]
+render = [
+  "pygame>=2.5"
+]
+render3d = [
+  "pyvista>=0.43",
+  "vtk>=9.2"
+]
+dev = [
+  "pytest>=7.0",
+  "pettingzoo[test]>=1.24"
+]
 
 [tool.setuptools]
 packages = [
   "orbital",
   "orbital.envs",
   "orbital.envs.core",
-  "orbital.envs.rendering",
-  "baselines",
-  "cleanmarl",
-  "mma",
-  "mma.presets"
+  "orbital.envs.rendering"
 ]
-
-[tool.setuptools.package-data]
-cleanmarl = ["cleanmarl/*.py", "cleanmarl/env/*.py"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]

@@ -1,9 +1,0 @@
-{
-  "assignments": {},
-  "metadata": {
-    "description": "Empty MMA organization: no roles, no goals, equivalent to classic MARL while still using MMAWrapper."
-  },
-  "name": "empty",
-  "goals": {},
-  "roles": {}
-}
