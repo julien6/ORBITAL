@@ -22,8 +22,8 @@ Each agent receives a `np.float32` vector of size **20**:
 1. normalized self energy `[0,1]`
 2. normalized self health `[0,1]`
 3. normalized orbital angle `theta/(2π)` in `[0,1]`
-4. normalized orbital radius in `[0,1]`
-5. normalized orbital inclination `phi` in 3D, or `0` in 2D
+4. normalized instantaneous orbital radius in `[0,1]`
+5. normalized derived orbital latitude `phi` in 3D, or `0` in 2D
 6. sunlight indicator
 7. direct ground contact indicator
 8. estimated route to ground indicator
@@ -108,6 +108,12 @@ The default reward is intentionally non-myopic: it rewards mission output but pe
 - `theta`
 - `phi`
 - `radius`
+- `semi_major_axis`
+- `eccentricity`
+- `mean_anomaly`
+- `arg_periapsis`
+- `inclination`
+- `raan`
 - `sunlight`
 - `ground_contact`
 - `ground_route`
@@ -122,9 +128,12 @@ The default reward is intentionally non-myopic: it rewards mission output but pe
 ## Orbital/ground notes
 
 - The model supports multiple ground stations via `ground_station_thetas` (angles on Earth surface, in radians).
-- 3D mode is enabled with `world_dim=3` and uses `(theta, radius, phi)` orbital state.
+- All moving bodies are propagated from Keplerian elements: semi-major axis, eccentricity, mean anomaly, argument of periapsis, inclination, and right ascension of the ascending node.
+- `theta`, `radius`, and `phi` remain derived spherical coordinates for observations, proximity checks, and rendering.
+- 3D mode is enabled with `world_dim=3`; 2D mode uses the same elliptic propagation in the equatorial plane.
 - Visual projection is controlled by `render_projection` (`2d` map with pygame, or `3d` scene with pyvista).
 - For 3D projection, `render_quality` (`ultra_low`, `low`, `medium`, `high`) controls rendering cost vs smoothness.
+- Satellites, observation tasks, and debris clouds advance mean anomaly with mean motion `kepler_constant / semi_major_axis^(3/2)` and solve Kepler's equation for their instantaneous position.
 - Links are line-of-sight constrained: communications do not pass through Earth (`earth_radius`).
-- Optional orbital debris clouds are modeled via `enable_debris`; each cloud has drifting position, spread, and density.
+- Optional orbital debris clouds are modeled via `enable_debris`; each cloud has an orbital position, spread, and density.
 - Conjunction pressure is modeled as a local `Pc` proxy from debris density; maneuver actions (`OrbitDown`/`OrbitUp`) reduce risk.

@@ -329,7 +329,13 @@ class PygameRenderer:
             for i in range(core.num_agents):
                 if i not in self._anim_prev_orbit:
                     self._anim_prev_orbit[i] = self._anim_target_orbit[i]
-            self._anim_progress = 1.0 if mode != "human" else 0.0
+            if mode != "human":
+                self._anim_progress = 1.0
+            else:
+                # The examples advance the core once per rendered frame, so a
+                # new target must consume this frame's elapsed time as well.
+                self._anim_progress = min(
+                    1.0, dt_ms / max(1.0, self._anim_duration_ms))
             self._anim_core_t = core.t
         elif mode == "human" and self._anim_progress < 1.0:
             self._anim_progress = min(1.0, self._anim_progress + dt_ms / max(1.0, self._anim_duration_ms))

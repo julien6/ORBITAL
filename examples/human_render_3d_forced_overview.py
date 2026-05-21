@@ -44,13 +44,17 @@ def force_overview_state(env) -> None:
     # Keep some buffered data so downlink overlays remain visible.
     core.buffered_data = np.maximum(core.buffered_data, 1.5)
 
+    def place_at_periapsis(idx: int, longitude: float) -> None:
+        core.orbit_mean_anomaly[idx] = 0.0
+        core.orbit_arg_periapsis[idx] = float(longitude)
+        core.orbit_inclination[idx] = 0.0
+        core.orbit_raan[idx] = 0.0
+
     # Force one agent in direct contact with first ground station.
-    core.orbit_theta[0] = float(core.ground_thetas[0])
-    core.orbit_phi[0] = float(core.ground_phis[0])
+    place_at_periapsis(0, float(core.ground_thetas[0]))
 
     # Force last agent roughly opposite to ground station and disconnected.
-    core.orbit_theta[n - 1] = float((core.ground_thetas[0] + math.pi) % (2.0 * math.pi))
-    core.orbit_phi[n - 1] = float(-core.ground_phis[0])
+    place_at_periapsis(n - 1, float((core.ground_thetas[0] + math.pi) % (2.0 * math.pi)))
 
     core._refresh_cartesian_positions()
     core.update_comm_graph()
@@ -110,4 +114,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

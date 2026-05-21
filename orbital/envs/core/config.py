@@ -75,7 +75,6 @@ class OrbitalConfig:
     num_debris_clouds: int = 4
     debris_spawn_rate: float = 0.10
     debris_decay: float = 0.02
-    debris_drift_std: float = 0.03
     debris_spread_min: float = 0.30
     debris_spread_max: float = 0.90
     debris_risk_gain: float = 0.85
@@ -92,11 +91,12 @@ class OrbitalConfig:
     orbit_min_radius: float = 2.0
     orbit_max_radius: float = 8.0
     kepler_constant: float = 0.35
+    eccentricity_min: float = 0.04
+    eccentricity_max: float = 0.32
     orbit_shift_step: float = 0.45
     low_orbit_margin: float = 0.35
     high_orbit_margin: float = 0.50
     atmospheric_health_loss: float = 0.8
-    atmospheric_slowdown: float = 0.82
     high_orbit_comm_cost_scale: float = 0.45
     earth_radius: float = 1.0
     ground_theta: float = -math.pi / 2.0
@@ -154,8 +154,6 @@ class OrbitalConfig:
             raise ValueError("debris_spawn_rate must be in [0,1]")
         if not 0.0 <= self.debris_decay <= 1.0:
             raise ValueError("debris_decay must be in [0,1]")
-        if self.debris_drift_std < 0.0:
-            raise ValueError("debris_drift_std must be >= 0")
         if self.debris_spread_min <= 0.0:
             raise ValueError("debris_spread_min must be > 0")
         if self.debris_spread_max < self.debris_spread_min:
@@ -185,6 +183,18 @@ class OrbitalConfig:
             raise ValueError("orbit_min_radius must be > earth_radius")
         if self.kepler_constant <= 0.0:
             raise ValueError("kepler_constant must be > 0")
+        if not 0.0 <= self.eccentricity_min < 1.0:
+            raise ValueError("eccentricity_min must be in [0,1)")
+        if not self.eccentricity_min <= self.eccentricity_max < 1.0:
+            raise ValueError("eccentricity_max must be in [eccentricity_min,1)")
+        max_bounded_e = (
+            (self.orbit_max_radius - self.orbit_min_radius)
+            / (self.orbit_max_radius + self.orbit_min_radius)
+        )
+        if self.eccentricity_max >= max_bounded_e:
+            raise ValueError(
+                "eccentricity_max must keep periapsis and apoapsis inside the orbital radius bounds"
+            )
         if self.orbit_shift_step <= 0.0:
             raise ValueError("orbit_shift_step must be > 0")
         if not 0.0 < self.ground_contact_angle <= math.pi:

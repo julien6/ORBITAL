@@ -111,7 +111,7 @@ This creates deceptive local information and forces policies to reason under unc
 
 ### 5) Orbital Debris and Conjunction Risk
 
-* Optional drifting debris clouds are sampled in orbital coordinates.
+* Optional debris clouds orbit from elliptical Keplerian elements.
 * Each satellite gets a local conjunction-risk proxy (`Pc` estimate) from nearby debris density.
 * `OrbitDown` / `OrbitUp` act as simple avoidance maneuvers that reduce immediate risk.
 * If risk remains high without mitigation, the environment applies risk penalties and rare collision events.
@@ -233,12 +233,12 @@ Common knobs:
 * `num_tasks`,          `task_spawn_rate`,          `task_priority_mode`
 * `energy_budget`, `energy_costs`, `enable_recharge`,          `recharge_rate`
 * `comm_radius`,  `p_link_drop`
-* `orbit_min_radius`,         `orbit_max_radius`,         `kepler_constant`,         `orbit_shift_step`,         `earth_radius`
+* `orbit_min_radius`,         `orbit_max_radius`,         `kepler_constant`,         `eccentricity_min`,         `eccentricity_max`,         `orbit_shift_step`,         `earth_radius`
 * `ground_station_thetas`,         `ground_contact_angle`
 * `ground_station_phis`,        `world_dim`,        `inclination_max`,        `render_projection`
 * `render_quality`
 * `adversarial_rate`,          `compromise_duration`,  `spoof_mode`
-* `enable_debris`,         `num_debris_clouds`,         `debris_spawn_rate`,         `debris_decay`,         `debris_drift_std`
+* `enable_debris`,         `num_debris_clouds`,         `debris_spawn_rate`,         `debris_decay`
 * `debris_spread_min`,         `debris_spread_max`,         `debris_risk_gain`,         `pc_alert_threshold`,         `pc_collision_scale`
 * `debris_mitigation_factor`
 * `reward_weights`,          `reward_mode`
@@ -263,8 +263,15 @@ orbital/
 examples/
   random_policy.py
   human_render.py
+tests/
 docs/
   ENV_SPECS.md
+```
+
+## Testing
+
+```bash
+pytest -q
 ```
 
 ## Intended Use

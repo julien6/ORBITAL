@@ -11,23 +11,34 @@ from orbital.envs.core.spaces import ACTION_MAP
 
 
 @dataclass
+class KeplerOrbit:
+    semi_major_axis: float
+    eccentricity: float
+    mean_anomaly: float
+    arg_periapsis: float
+    inclination: float
+    raan: float
+
+
+@dataclass
 class Task:
-    theta: float
-    radius: float
-    phi: float
+    orbit: KeplerOrbit
     priority: float
+    theta: float = 0.0
+    radius: float = 0.0
+    phi: float = 0.0
     active: bool = True
     age: int = 0
 
 
 @dataclass
 class DebrisCloud:
-    theta: float
-    radius: float
-    phi: float
+    orbit: KeplerOrbit
     spread: float
     density: float
-    drift: float
+    theta: float = 0.0
+    radius: float = 0.0
+    phi: float = 0.0
 
 
 class OrbitalCore:
@@ -66,24 +77,25 @@ class OrbitalCore:
     def reset(self, seed: int | None) -> None:
         self.rng = np.random.default_rng(seed)
         self.t = 0
-        self.orbit_theta = self.rng.uniform(
-            0.0, 2.0 * np.pi, size=(self.num_agents,)).astype(np.float32)
-        if self.config.world_dim == 3:
-            self.orbit_phi = self.rng.uniform(
-                -self.config.inclination_max,
-                self.config.inclination_max,
-                size=(self.num_agents,),
-            ).astype(np.float32)
-        else:
-            self.orbit_phi = np.zeros((self.num_agents,), dtype=np.float32)
-        self.orbit_radius = self.rng.uniform(
-            self.config.orbit_min_radius,
-            self.config.orbit_max_radius,
-            size=(self.num_agents,),
-        ).astype(np.float32)
+        sampled_orbits = [self._sample_orbit() for _ in range(self.num_agents)]
+        self.orbit_semi_major_axis = np.array(
+            [orbit.semi_major_axis for orbit in sampled_orbits], dtype=np.float32)
+        self.orbit_eccentricity = np.array(
+            [orbit.eccentricity for orbit in sampled_orbits], dtype=np.float32)
+        self.orbit_mean_anomaly = np.array(
+            [orbit.mean_anomaly for orbit in sampled_orbits], dtype=np.float32)
+        self.orbit_arg_periapsis = np.array(
+            [orbit.arg_periapsis for orbit in sampled_orbits], dtype=np.float32)
+        self.orbit_inclination = np.array(
+            [orbit.inclination for orbit in sampled_orbits], dtype=np.float32)
+        self.orbit_raan = np.array(
+            [orbit.raan for orbit in sampled_orbits], dtype=np.float32)
+        self.orbit_theta = np.zeros((self.num_agents,), dtype=np.float32)
+        self.orbit_phi = np.zeros((self.num_agents,), dtype=np.float32)
+        self.orbit_radius = np.zeros((self.num_agents,), dtype=np.float32)
         self.positions = np.zeros(
             (self.num_agents, self.config.world_dim), dtype=np.float32)
-        self._refresh_cartesian_positions()
+        self._refresh_satellite_positions()
 
         self.energy = np.full((self.num_agents,),
                               self.config.energy_budget, dtype=np.float32)
@@ -139,33 +151,24 @@ class OrbitalCore:
         }
 
     def _spawn_task(self) -> Task:
-        return Task(
-            theta=float(self.rng.uniform(0.0, 2.0 * np.pi)),
-            radius=float(self.rng.uniform(
-                self.config.orbit_min_radius, self.config.orbit_max_radius)),
-            phi=float(self.rng.uniform(-self.config.inclination_max,
-                      self.config.inclination_max))
-            if self.config.world_dim == 3
-            else 0.0,
+        task = Task(
+            orbit=self._sample_orbit(),
             priority=float(self.rng.uniform(0.2, 1.0)),
             active=True,
             age=0,
         )
+        self._refresh_body_coordinates(task)
+        return task
 
     def _spawn_debris_cloud(self) -> DebrisCloud:
-        return DebrisCloud(
-            theta=float(self.rng.uniform(0.0, 2.0 * np.pi)),
-            radius=float(self.rng.uniform(
-                self.config.orbit_min_radius, self.config.orbit_max_radius)),
-            phi=float(self.rng.uniform(-self.config.inclination_max,
-                      self.config.inclination_max))
-            if self.config.world_dim == 3
-            else 0.0,
+        cloud = DebrisCloud(
+            orbit=self._sample_orbit(),
             spread=float(self.rng.uniform(
                 self.config.debris_spread_min, self.config.debris_spread_max)),
             density=float(self.rng.uniform(0.35, 1.0)),
-            drift=float(self.rng.normal(0.0, self.config.debris_drift_std)),
         )
+        self._refresh_body_coordinates(cloud)
+        return cloud
 
     def _is_alive(self, i: int) -> bool:
         return self.health[i] > 0.0
@@ -206,14 +209,6 @@ class OrbitalCore:
                 dtype=np.float32,
             )
         return np.array([radius * np.cos(theta), radius * np.sin(theta)], dtype=np.float32)
-
-    def _refresh_cartesian_positions(self) -> None:
-        for i in range(self.num_agents):
-            self.positions[i] = self._cartesian_from_orbit(
-                float(self.orbit_theta[i]),
-                float(self.orbit_radius[i]),
-                float(self.orbit_phi[i]),
-            )
 
     def _wrap_angle(self, theta: float) -> float:
         return float(theta % (2.0 * np.pi))
@@ -278,16 +273,115 @@ class OrbitalCore:
     def _action_name(self, a: int) -> str:
         return ACTION_MAP.get(int(a), "idle")
 
-    def _apply_orbit_shift(self, i: int, delta_radius: float) -> None:
-        nr = float(self.orbit_radius[i] + delta_radius)
-        self.orbit_radius[i] = float(np.clip(
-            nr, self.config.earth_radius + 0.05, self.config.orbit_max_radius + self.config.high_orbit_margin))
+    def _sample_orbit(self) -> KeplerOrbit:
+        eccentricity = float(self.rng.uniform(
+            self.config.eccentricity_min, self.config.eccentricity_max))
+        lo, hi = self._semi_major_axis_bounds(eccentricity)
+        return KeplerOrbit(
+            semi_major_axis=float(self.rng.uniform(lo, hi)),
+            eccentricity=eccentricity,
+            mean_anomaly=float(self.rng.uniform(0.0, 2.0 * np.pi)),
+            arg_periapsis=float(self.rng.uniform(0.0, 2.0 * np.pi)),
+            inclination=float(self.rng.uniform(
+                -self.config.inclination_max, self.config.inclination_max))
+            if self.config.world_dim == 3
+            else 0.0,
+            raan=float(self.rng.uniform(0.0, 2.0 * np.pi))
+            if self.config.world_dim == 3
+            else 0.0,
+        )
 
-    def _propagate_kepler(self, i: int, slowdown: float = 1.0) -> None:
-        r = max(1e-6, float(self.orbit_radius[i]))
-        omega = slowdown * self.config.kepler_constant / (r ** 1.5)
-        self.orbit_theta[i] = self._wrap_angle(
-            float(self.orbit_theta[i] + omega))
+    def _semi_major_axis_bounds(self, eccentricity: float) -> tuple[float, float]:
+        lo = self.config.orbit_min_radius / max(1e-6, 1.0 - eccentricity)
+        hi = self.config.orbit_max_radius / max(1e-6, 1.0 + eccentricity)
+        return float(lo), float(hi)
+
+    def _apply_orbit_shift(self, i: int, delta_axis: float) -> None:
+        lo, hi = self._semi_major_axis_bounds(float(self.orbit_eccentricity[i]))
+        self.orbit_semi_major_axis[i] = float(np.clip(
+            float(self.orbit_semi_major_axis[i]) + delta_axis, lo, hi))
+
+    def _kepler_mean_motion(self, semi_major_axis: float) -> float:
+        a = max(1e-6, float(semi_major_axis))
+        return float(self.config.kepler_constant / (a ** 1.5))
+
+    def _solve_eccentric_anomaly(self, mean_anomaly: float, eccentricity: float) -> float:
+        mean = self._wrap_angle(mean_anomaly)
+        eccentric = mean if eccentricity < 0.8 else np.pi
+        for _ in range(8):
+            residual = eccentric - eccentricity * np.sin(eccentric) - mean
+            derivative = 1.0 - eccentricity * np.cos(eccentric)
+            eccentric -= residual / max(1e-8, derivative)
+        return float(eccentric)
+
+    def _coordinates_from_elements(self, orbit: KeplerOrbit) -> tuple[np.ndarray, float, float, float]:
+        eccentric_anomaly = self._solve_eccentric_anomaly(
+            orbit.mean_anomaly, orbit.eccentricity)
+        x_perifocal = orbit.semi_major_axis * \
+            (np.cos(eccentric_anomaly) - orbit.eccentricity)
+        y_perifocal = orbit.semi_major_axis * \
+            np.sqrt(1.0 - orbit.eccentricity ** 2) * np.sin(eccentric_anomaly)
+
+        cos_arg = np.cos(orbit.arg_periapsis)
+        sin_arg = np.sin(orbit.arg_periapsis)
+        x_node = cos_arg * x_perifocal - sin_arg * y_perifocal
+        y_node = sin_arg * x_perifocal + cos_arg * y_perifocal
+
+        if self.config.world_dim == 3:
+            cos_inc = np.cos(orbit.inclination)
+            sin_inc = np.sin(orbit.inclination)
+            cos_raan = np.cos(orbit.raan)
+            sin_raan = np.sin(orbit.raan)
+            x_plane = x_node
+            y_plane = y_node * cos_inc
+            z = y_node * sin_inc
+            x = cos_raan * x_plane - sin_raan * y_plane
+            y = sin_raan * x_plane + cos_raan * y_plane
+            vec = np.array([x, y, z], dtype=np.float32)
+        else:
+            vec = np.array([x_node, y_node], dtype=np.float32)
+
+        radius = float(np.linalg.norm(vec))
+        theta = self._wrap_angle(float(np.arctan2(vec[1], vec[0])))
+        phi = float(np.arcsin(np.clip(float(vec[2]) / max(1e-6, radius), -1.0, 1.0))) \
+            if self.config.world_dim == 3 else 0.0
+        return vec, theta, radius, phi
+
+    def _satellite_orbit(self, i: int) -> KeplerOrbit:
+        return KeplerOrbit(
+            semi_major_axis=float(self.orbit_semi_major_axis[i]),
+            eccentricity=float(self.orbit_eccentricity[i]),
+            mean_anomaly=float(self.orbit_mean_anomaly[i]),
+            arg_periapsis=float(self.orbit_arg_periapsis[i]),
+            inclination=float(self.orbit_inclination[i]),
+            raan=float(self.orbit_raan[i]),
+        )
+
+    def _refresh_satellite_positions(self) -> None:
+        for i in range(self.num_agents):
+            vec, theta, radius, phi = self._coordinates_from_elements(
+                self._satellite_orbit(i))
+            self.positions[i] = vec
+            self.orbit_theta[i] = theta
+            self.orbit_radius[i] = radius
+            self.orbit_phi[i] = phi
+
+    def _refresh_cartesian_positions(self) -> None:
+        self._refresh_satellite_positions()
+
+    def _refresh_body_coordinates(self, body: Task | DebrisCloud) -> None:
+        _, body.theta, body.radius, body.phi = self._coordinates_from_elements(
+            body.orbit)
+
+    def _propagate_body(self, body: Task | DebrisCloud) -> None:
+        body.orbit.mean_anomaly = self._wrap_angle(
+            body.orbit.mean_anomaly + self._kepler_mean_motion(body.orbit.semi_major_axis))
+        self._refresh_body_coordinates(body)
+
+    def _propagate_kepler(self, i: int) -> None:
+        mean_motion = self._kepler_mean_motion(float(self.orbit_semi_major_axis[i]))
+        self.orbit_mean_anomaly[i] = self._wrap_angle(
+            float(self.orbit_mean_anomaly[i] + mean_motion))
 
     def _high_orbit_factor(self, i: int) -> float:
         high_start = self.config.orbit_max_radius - self.config.high_orbit_margin
@@ -306,21 +400,7 @@ class OrbitalCore:
                 if self.rng.random() < self.config.debris_spawn_rate:
                     self.debris_clouds[idx] = self._spawn_debris_cloud()
                 continue
-            cloud.theta = self._wrap_angle(
-                cloud.theta + cloud.drift + float(self.rng.normal(0.0, 0.01)))
-            if self.config.world_dim == 3:
-                cloud.phi = float(np.clip(
-                    cloud.phi +
-                    float(self.rng.normal(0.0, self.config.debris_drift_std * 0.5)),
-                    -self.config.inclination_max,
-                    self.config.inclination_max,
-                ))
-            cloud.radius = float(np.clip(
-                cloud.radius +
-                float(self.rng.normal(0.0, self.config.debris_drift_std)),
-                self.config.orbit_min_radius,
-                self.config.orbit_max_radius,
-            ))
+            self._propagate_body(cloud)
             cloud.spread = float(np.clip(
                 cloud.spread + float(self.rng.normal(0.0, 0.02)),
                 self.config.debris_spread_min,
@@ -529,8 +609,7 @@ class OrbitalCore:
                 continue
             if not self._is_powered(i):
                 executed_actions[i] = "idle"
-                self._propagate_kepler(
-                    i, slowdown=self.config.atmospheric_slowdown if self._is_low_orbit(i) else 1.0)
+                self._propagate_kepler(i)
                 continue
 
             act = self._maybe_force_action(i, int(actions.get(name, 7)))
@@ -539,6 +618,7 @@ class OrbitalCore:
             executed_actions[i] = action_name
             energy_spent[i] += self._apply_energy_cost(i, action_name)
             if self.energy[i] <= 0.0 and action_name != "lowpower":
+                self._propagate_kepler(i)
                 continue
 
             if action_name in {"relay_ground", "relay_sat"} and self.compromised_for[i] > 0 and self.rng.random() < self.config.malware_jam_prob:
@@ -567,9 +647,7 @@ class OrbitalCore:
                     self.energy[i] = min(self.config.energy_budget, float(
                         self.energy[i] + self.config.recharge_rate))
 
-            slowdown = self.config.atmospheric_slowdown if self._is_low_orbit(
-                i) else 1.0
-            self._propagate_kepler(i, slowdown=slowdown)
+            self._propagate_kepler(i)
 
         if self.config.enable_recharge:
             for i in range(n):
@@ -577,7 +655,7 @@ class OrbitalCore:
                     self.energy[i] = min(self.config.energy_budget, float(
                         self.energy[i] + 0.15 * self.config.recharge_rate))
 
-        self._refresh_cartesian_positions()
+        self._refresh_satellite_positions()
         self._update_debris_clouds()
         self.update_comm_graph()
         knowledge += self._refresh_task_knowledge() / max(1, n)
@@ -769,6 +847,7 @@ class OrbitalCore:
     def _update_tasks(self) -> None:
         for idx, task in enumerate(self.tasks):
             if task.active:
+                self._propagate_body(task)
                 task.age += 1
                 if task.age > 25:
                     task.active = False
@@ -897,6 +976,12 @@ class OrbitalCore:
             "theta": float(self.orbit_theta[i]),
             "phi": float(self.orbit_phi[i]),
             "radius": float(self.orbit_radius[i]),
+            "semi_major_axis": float(self.orbit_semi_major_axis[i]),
+            "eccentricity": float(self.orbit_eccentricity[i]),
+            "mean_anomaly": float(self.orbit_mean_anomaly[i]),
+            "arg_periapsis": float(self.orbit_arg_periapsis[i]),
+            "inclination": float(self.orbit_inclination[i]),
+            "raan": float(self.orbit_raan[i]),
             "sunlight": bool(self._in_sunlight(i)),
             "ground_contact": bool(self._direct_ground_contact(i)),
             "ground_route": bool(self._has_path_to_ground(i)),
