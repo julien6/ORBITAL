@@ -620,21 +620,22 @@ class PygameRenderer:
         y += 18
         self._draw_text(f"knowledge total: {self._cumulative_reward_components.get('knowledge', 0.0):>5.2f}", x, y, (190, 210, 255))
         y += 18
-        self._draw_text(f"energy: -{rc.get('energy', 0.0):>4.2f}", x, y, (255, 181, 108))
+        self._draw_text(f"energy total: -{self._cumulative_reward_components.get('energy', 0.0):>4.2f}", x, y, (255, 181, 108))
         y += 18
-        self._draw_text(f"health: -{rc.get('health', 0.0):>4.2f}", x, y, (255, 126, 146))
+        self._draw_text(f"health total: -{self._cumulative_reward_components.get('health', 0.0):>4.2f}", x, y, (255, 126, 146))
         y += 18
-        self._draw_text(f"isolation: -{rc.get('isolation', 0.0):>4.2f}", x, y, (255, 191, 118))
+        self._draw_text(f"isolation total: -{self._cumulative_reward_components.get('isolation', 0.0):>4.2f}", x, y, (255, 191, 118))
         y += 18
-        self._draw_text(f"data loss: -{rc.get('data_loss', 0.0):>4.2f}", x, y, (255, 126, 126))
+        self._draw_text(f"data loss total: -{self._cumulative_reward_components.get('data_loss', 0.0):>4.2f}", x, y, (255, 126, 126))
         y += 18
-        self._draw_text(f"cyber: -{rc.get('cyber', 0.0):>4.2f}", x, y, (255, 142, 164))
+        self._draw_text(f"cyber total: -{self._cumulative_reward_components.get('cyber', 0.0):>4.2f}", x, y, (255, 142, 164))
         y += 18
-        self._draw_text(f"jam/forced: -{rc.get('jam', 0.0) + rc.get('forced_action', 0.0):>4.2f}", x, y, (255, 142, 164))
+        jam_total = self._cumulative_reward_components.get('jam', 0.0) + self._cumulative_reward_components.get('forced_action', 0.0)
+        self._draw_text(f"jam/forced total: -{jam_total:>4.2f}", x, y, (255, 142, 164))
         y += 18
-        self._draw_text(f"debris: -{rc.get('debris_risk', 0.0):>4.2f}", x, y, (210, 146, 255))
+        self._draw_text(f"debris total: -{self._cumulative_reward_components.get('debris_risk', 0.0):>4.2f}", x, y, (210, 146, 255))
         y += 18
-        self._draw_text(f"collision: -{rc.get('collision', 0.0):>4.2f}", x, y, (255, 98, 82))
+        self._draw_text(f"collision total: -{self._cumulative_reward_components.get('collision', 0.0):>4.2f}", x, y, (255, 98, 82))
 
         y += 20
         self._draw_text("Legend", x, y, (218, 231, 255), size=14, bold=True)
