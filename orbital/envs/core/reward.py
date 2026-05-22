@@ -6,6 +6,8 @@ def compute_shared_reward(components: dict[str, float], weights: dict[str, float
     return (
         weights.get("task", 0.0) * components.get("task", 0.0)
         + weights.get("delivery", 0.0) * components.get("delivery", 0.0)
+        + weights.get("ground_task_intake", 0.0)
+        * components.get("ground_task_intake", 0.0)
         + weights.get("knowledge", 0.0) * components.get("knowledge", 0.0)
         - weights.get("energy", 0.0) * components.get("energy", 0.0)
         - weights.get("overflow", 0.0) * components.get("overflow", 0.0)

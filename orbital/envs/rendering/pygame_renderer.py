@@ -23,6 +23,7 @@ class PygameRenderer:
         self._anim_duration_ms = 220.0
         self._anim_core_t = -1
         self._last_tick_ms = None
+        self._cumulative_reward_components: dict[str, float] = {}
 
     def _ensure(self) -> None:
         if self._pygame is not None:
@@ -42,6 +43,26 @@ class PygameRenderer:
     def _draw_text(self, text: str, x: int, y: int, color, size: int = 14, bold: bool = False):
         surf = self._font(size, bold=bold).render(text, True, color)
         self.screen.blit(surf, (x, y))
+
+    def _reset_cumulative_reward_components(self) -> None:
+        self._cumulative_reward_components = {
+            "task": 0.0,
+            "delivery": 0.0,
+            "ground_task_intake": 0.0,
+            "knowledge": 0.0,
+            "energy": 0.0,
+            "overflow": 0.0,
+            "data_loss": 0.0,
+            "health": 0.0,
+            "isolation": 0.0,
+            "failure": 0.0,
+            "cyber": 0.0,
+            "jam": 0.0,
+            "forced_action": 0.0,
+            "atmospheric_drag": 0.0,
+            "debris_risk": 0.0,
+            "collision": 0.0,
+        }
 
     def _role_tag(self, core, i: int) -> str:
         return ""
@@ -303,6 +324,7 @@ class PygameRenderer:
             self._anim_current_orbit = {}
             self._anim_progress = 1.0
             self._anim_core_t = -1
+            self._reset_cumulative_reward_components()
         sat_points = []
         if core.t != self._anim_core_t:
             new_target = {}
@@ -451,6 +473,32 @@ class PygameRenderer:
             pygame.draw.rect(self.screen, (124, 236, 150), (gx - 7, gy - 7, 14, 14), border_radius=2)
             self._draw_text(f"GS{gi}", gx + 10, gy - 10, (175, 244, 176), size=11, bold=True)
 
+        if show_links:
+            for i in range(core.num_agents):
+                health_arr = getattr(core, "health", core.energy)
+                if health_arr[i] <= 0 or not core._direct_ground_contact(i):
+                    continue
+                if core.config.world_dim == 3:
+                    sat_vec = core.positions[i]
+                    ground_idx = int(np.argmin([
+                        float(np.linalg.norm(sat_vec - core.ground_vectors[j]))
+                        for j in range(len(core.ground_vectors))
+                    ]))
+                else:
+                    sat_theta = float(core.orbit_theta[i])
+                    ground_idx = int(np.argmin([
+                        abs(core._angle_delta(sat_theta, float(gt)))
+                        for gt in core.ground_thetas
+                    ]))
+                for a, b in self._clip_line_to_earth(
+                    sat_points[i],
+                    ground_points[ground_idx],
+                    cx,
+                    cy,
+                    float(earth_r),
+                ):
+                    pygame.draw.line(self.screen, (88, 242, 154), a, b, 2)
+
         for i in range(core.num_agents):
             x, y = sat_points[i]
             compromised = core.compromised_for[i] > 0
@@ -558,14 +606,19 @@ class PygameRenderer:
         self._draw_text(f"Delivered total: {core.delivered_total:.1f}", x, y, (124, 226, 255))
 
         y += 30
-        self._draw_text("Last Reward Components", x, y, (218, 231, 255), size=14, bold=True)
+        self._draw_text("Cumulative Reward Totals", x, y, (218, 231, 255), size=14, bold=True)
         y += 22
         rc = core.last_reward_components
-        self._draw_text(f"task: {rc.get('task', 0.0):>5.2f}", x, y, (245, 227, 130))
+        for key, value in rc.items():
+            self._cumulative_reward_components[key] = self._cumulative_reward_components.get(key, 0.0) + float(value)
+
+        self._draw_text(f"task total: {self._cumulative_reward_components.get('task', 0.0):>5.2f}", x, y, (245, 227, 130))
         y += 18
-        self._draw_text(f"delivery: {rc.get('delivery', 0.0):>5.2f}", x, y, (128, 229, 252))
+        self._draw_text(f"delivery total: {self._cumulative_reward_components.get('delivery', 0.0):>5.2f}", x, y, (128, 229, 252))
         y += 18
-        self._draw_text(f"knowledge: {rc.get('knowledge', 0.0):>5.2f}", x, y, (190, 210, 255))
+        self._draw_text(f"ground intake total: {self._cumulative_reward_components.get('ground_task_intake', 0.0):>5.2f}", x, y, (150, 242, 205))
+        y += 18
+        self._draw_text(f"knowledge total: {self._cumulative_reward_components.get('knowledge', 0.0):>5.2f}", x, y, (190, 210, 255))
         y += 18
         self._draw_text(f"energy: -{rc.get('energy', 0.0):>4.2f}", x, y, (255, 181, 108))
         y += 18
@@ -599,7 +652,7 @@ class PygameRenderer:
         self._draw_text("Comms link (clipped by Earth)", x + 20, y, (202, 218, 246), size=12)
         y += 16
         pygame.draw.line(self.screen, (102, 238, 165), (x + 2, y + 7), (x + 14, y + 7), 1)
-        self._draw_text("Ground route feasible", x + 20, y, (202, 218, 246), size=12)
+        self._draw_text("Ground contact / feasible route", x + 20, y, (202, 218, 246), size=12)
         y += 16
         self._draw_dashed_line((x + 2, y + 7), (x + 14, y + 7), (244, 132, 132), width=1, dash=3, gap=2)
         self._draw_text("No ground route", x + 20, y, (202, 218, 246), size=12)

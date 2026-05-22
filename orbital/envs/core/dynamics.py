@@ -135,6 +135,7 @@ class OrbitalCore:
         return {
             "task": 0.0,
             "delivery": 0.0,
+            "ground_task_intake": 0.0,
             "knowledge": 0.0,
             "energy": 0.0,
             "overflow": 0.0,
@@ -583,6 +584,7 @@ class OrbitalCore:
         n = self.num_agents
         serviced = np.zeros((n,), dtype=np.float32)
         delivered = np.zeros((n,), dtype=np.float32)
+        ground_task_intake = np.zeros((n,), dtype=np.float32)
         knowledge = np.zeros((n,), dtype=np.float32)
         energy_spent = np.zeros((n,), dtype=np.float32)
         overflow = np.zeros((n,), dtype=np.float32)
@@ -632,7 +634,8 @@ class OrbitalCore:
             elif action_name == "observe":
                 serviced[i], overflow[i] = self._observe_task(i)
             elif action_name == "relay_ground":
-                delivered[i], knowledge[i] = self._relay_ground(i)
+                delivered[i], knowledge[i], ground_task_intake[i] = \
+                    self._relay_ground(i)
             elif action_name == "relay_sat":
                 knowledge[i], data_loss[i] = self._relay_sat(i)
             elif action_name == "cyberscan":
@@ -701,6 +704,7 @@ class OrbitalCore:
         components = {
             "task": float(serviced.sum()),
             "delivery": float(delivered.sum()),
+            "ground_task_intake": float(ground_task_intake.sum()),
             "knowledge": float(knowledge.sum()),
             "energy": float(energy_spent.sum()),
             "overflow": float(overflow.sum()),
@@ -729,6 +733,7 @@ class OrbitalCore:
                 local_components = {
                     "task": float(serviced[i]),
                     "delivery": float(delivered[i]),
+                    "ground_task_intake": float(ground_task_intake[i]),
                     "knowledge": float(knowledge[i]),
                     "energy": float(energy_spent[i]),
                     "overflow": float(overflow[i]),
@@ -793,20 +798,21 @@ class OrbitalCore:
                 return float(gain), float(overflow)
         return 0.0, 0.0
 
-    def _relay_ground(self, i: int) -> tuple[float, float]:
+    def _relay_ground(self, i: int) -> tuple[float, float, float]:
         if self.jammed[i] or not self._direct_ground_contact(i):
-            return 0.0, 0.0
+            return 0.0, 0.0, 0.0
         before = int(self.known_tasks[i].sum())
         station_before = int(self.station_known_tasks.sum())
         self.known_tasks[i] |= self.station_known_tasks
         self.station_known_tasks |= self.known_tasks[i]
-        knowledge_gain = float((int(self.known_tasks[i].sum(
-        )) - before) + (int(self.station_known_tasks.sum()) - station_before))
+        ground_task_intake = float(int(self.known_tasks[i].sum()) - before)
+        knowledge_gain = ground_task_intake + \
+            float(int(self.station_known_tasks.sum()) - station_before)
         out = min(self.config.relay_capacity_ground,
                   float(self.buffered_data[i]))
         self.buffered_data[i] -= out
         self.delivered_total += out
-        return float(out), knowledge_gain
+        return float(out), knowledge_gain, ground_task_intake
 
     def _relay_sat(self, i: int) -> tuple[float, float]:
         if self.jammed[i]:

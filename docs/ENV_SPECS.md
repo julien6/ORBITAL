@@ -6,13 +6,20 @@ The team goal is to maximize mission value delivered to ground while preserving 
 
 In practice, this means balancing four pressures at every step:
 
-1. acquisition (discover known orbital observation tasks and collect useful data),
+1. acquisition (receive or discover orbital observation tasks and collect useful data),
 2. delivery (route buffered data to ground directly or through satellites),
 3. stabilization (preserve health, energy, connectivity, and cyber integrity),
 4. conjunction safety (limit debris exposure and collision risk).
 
-Important modeling choice: `Observe` and `Relay` are intentionally decoupled.
-Servicing a task creates buffered data, but value is only realized when data is later delivered.
+Important modeling choice: ground-catalog task acquisition, `Observe`, and delivery are intentionally decoupled.
+In the default `task_knowledge_mode="ground_catalog"` hierarchy:
+
+1. a satellite in direct ground contact uses `REL_GRN` to receive active observation-task positions from the ground catalog,
+2. a satellite that knows a nearby task uses `OBS` to service it and create buffered data,
+3. later relay actions deliver or route that buffered data toward ground.
+
+Without step 1, a default satellite has no catalog task positions to target with `OBS`.
+Servicing a task creates buffered data, but value is only fully realized when data is later delivered.
 This is what makes myopic policies fail in long horizons.
 
 ## Observation (fixed-size vector)
@@ -73,8 +80,10 @@ Common failure behavior:
 
 By default, `reward_mode="shared"` with weighted components:
 
+- `+ ground task intake` when `REL_GRN` gives a satellite new task positions from the ground catalog
 - `+ task serviced`
 - `+ data delivered to ground`
+- `+ generic knowledge shared` from other discovery and relay paths
 - `- energy consumed`
 - `- isolated satellites`
 - `- satellite failures`
@@ -83,6 +92,8 @@ By default, `reward_mode="shared"` with weighted components:
 - `- collision events`
 
 Configure via `reward_weights` in constructor.
+
+The ground task intake component is separate from generic knowledge sharing so the default reward exposes the catalog prerequisite directly. Its default weight makes a useful `REL_GRN` contact a stronger training signal than an ordinary knowledge exchange, while `task` still rewards the next successful `OBS` step.
 
 The default reward is intentionally non-myopic: it rewards mission output but penalizes patterns that make the fleet brittle over time (isolation, failures, cyber impact, avoidable energy drain).
 

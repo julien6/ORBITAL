@@ -348,18 +348,19 @@ class PyVistaRenderer:
 
         for i in range(n_agents):
             health_arr = getattr(core, "health", core.energy)
-            if health_arr[i] <= 0 or core.buffered_data[i] <= 0.0:
+            if health_arr[i] <= 0:
                 continue
             sat = np.asarray(self._to_xyz(core.positions[i]), dtype=np.float32)
             nearest = int(np.argmin(np.linalg.norm(ground_pts - sat[None, :], axis=1)))
             g = ground_pts[nearest]
-            can_downlink = core._direct_ground_contact(i) or has_ground_path[i]
-            if can_downlink:
+            direct_contact = core._direct_ground_contact(i)
+            can_downlink = direct_contact or has_ground_path[i]
+            if direct_contact or (core.buffered_data[i] > 0.0 and can_downlink):
                 ok_points.append((float(sat[0]), float(sat[1]), float(sat[2])))
                 ok_points.append((float(g[0]), float(g[1]), float(g[2])))
                 ok_lines.extend([2, 2 * ok_k, 2 * ok_k + 1])
                 ok_k += 1
-            else:
+            elif core.buffered_data[i] > 0.0:
                 blk_points.append((float(sat[0]), float(sat[1]), float(sat[2])))
                 blk_points.append((float(g[0]), float(g[1]), float(g[2])))
                 blk_lines.extend([2, 2 * blk_k, 2 * blk_k + 1])
@@ -486,7 +487,10 @@ class PyVistaRenderer:
         hud = (
             f"ORBITAL 3D VIEW | t={core.t}/{core.config.max_steps}\n"
             f"alive={alive}/{core.num_agents} | known_tasks={active_tasks} | debris={active_debris}\n"
-            f"delivered={core.delivered_total:.1f} | task={rc.get('task', 0.0):.2f} | delivery={rc.get('delivery', 0.0):.2f} | knowledge={rc.get('knowledge', 0.0):.2f}\n"
+            f"delivered={core.delivered_total:.1f} | task={rc.get('task', 0.0):.2f} | "
+            f"delivery={rc.get('delivery', 0.0):.2f} | "
+            f"ground_intake={rc.get('ground_task_intake', 0.0):.2f} | "
+            f"knowledge={rc.get('knowledge', 0.0):.2f}\n"
             f"energy=-{rc.get('energy', 0.0):.2f} | health=-{rc.get('health', 0.0):.2f} | cyber=-{rc.get('cyber', 0.0):.2f}\n"
             f"debris=-{rc.get('debris_risk', 0.0):.2f} | collision=-{rc.get('collision', 0.0):.2f}"
         )

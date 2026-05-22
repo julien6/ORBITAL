@@ -43,12 +43,13 @@ Episodes end by horizon ( `max_steps` ) or mission collapse (for example too few
 
 ## Operational Intuition (Mission Story)
 
-Think of ORBITAL as a repeated loop with two distinct phases:
+Think of ORBITAL as a repeated loop with a task hierarchy:
 
-1. `OBS` turns known local opportunities into buffered data on a satellite.
-2. `REL_GRN` and `REL_SAT` convert buffered data into mission value directly or through proxy routing toward ground.
+1. In the default ground-catalog mode, `REL_GRN` during direct ground contact gives a satellite active observation-task positions.
+2. `OBS` turns known nearby opportunities into buffered data on a satellite.
+3. `REL_GRN` and `REL_SAT` convert buffered data into mission value directly or through proxy routing toward ground.
 
-This deliberate split is where most difficulty comes from: a fleet can look productive locally while still failing globally if data never reaches ground.
+This deliberate split is where most difficulty comes from: satellites that miss catalog intake cannot target default observation tasks, and a fleet can still look productive locally while failing globally if observed data never reaches ground.
 
 Ideal policy profile:
 
@@ -146,6 +147,8 @@ Default reward mode is shared team reward ( `reward_mode="shared"` ), with confi
 
 * `+ task`: serviced task value
 * `+ delivery`: data delivered to ground
+* `+ ground_task_intake`: task positions received from the ground catalog by `REL_GRN`
+* `+ knowledge`: other task-knowledge exchange and discovery signals
 * `- energy`: action energy consumption
 * `- isolation`: disconnected alive satellites
 * `- failure`: satellite losses
@@ -225,6 +228,19 @@ Example:
 python examples/human_render.py
 ```
 
+Manual policy rollouts:
+
+```bash
+python examples/manual_reward_01_ground_intake.py
+python examples/manual_reward_02_observe_after_intake.py
+python examples/manual_reward_03_single_satellite_loop.py
+python examples/manual_reward_04_collaborative_loop.py
+```
+
+Each file keeps the normal parallel rollout loop and replaces random action
+sampling with a manual joint policy function over the current joint observation.
+The rollouts print the shared team reward at each step and its cumulative total.
+
 ## Key Configuration Parameters
 
 Common knobs:
@@ -263,6 +279,10 @@ orbital/
 examples/
   random_policy.py
   human_render.py
+  manual_reward_01_ground_intake.py
+  manual_reward_02_observe_after_intake.py
+  manual_reward_03_single_satellite_loop.py
+  manual_reward_04_collaborative_loop.py
 tests/
 docs/
   ENV_SPECS.md

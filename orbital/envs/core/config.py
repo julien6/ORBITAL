@@ -4,10 +4,14 @@ from dataclasses import dataclass, field
 import math
 
 
+# Hierarchical mission reward ordering: intake < knowledge < task < delivery.
+# This gives strong value to accidental mission discovery and exponentially in-
+# creasing value as observations turn into tasks and then successful delivery.
 DEFAULT_REWARD_WEIGHTS = {
-    "task": 1.0,
-    "delivery": 1.5,
-    "knowledge": 0.2,
+    "ground_task_intake": 1.0,
+    "knowledge": 10.0,
+    "task": 100.0,
+    "delivery": 1000.0,
     "energy": 0.05,
     "overflow": 0.4,
     "data_loss": 0.8,
